@@ -19,6 +19,7 @@ def append_row_to_sheet(service, spreadsheet_id, sheet_name, row_values):
         spreadsheetId=spreadsheet_id, range=range_name,
         valueInputOption='RAW', insertDataOption='INSERT_ROWS', body=body).execute()
     return result
+
 def main():
     creds = None
     if os.path.exists('token.json'):
@@ -37,28 +38,24 @@ def main():
         service = build('drive', 'v3', credentials=creds)
         sheets_service = build('sheets', 'v4', credentials=creds)
 
-        results = service.files().list(
+        # Cerca il file "valuesdoc" nel tuo Google Drive
+        results = service.files().list(q="name='valuesdoc' and mimeType='application/vnd.google-apps.spreadsheet'",
             pageSize=10, fields="nextPageToken, files(id, name, mimeType)").execute()
         items = results.get('files', [])
 
         if not items:
-            print('No files found.')
+            print('File "valuesdoc" non trovato.')
             return
-        print('Files:')
-        for item in items:
-            print(u'{0} ({1})'.format(item['name'], item['id']))
-        first_file = items[0]
-        if first_file['mimeType'] == 'application/vnd.google-apps.spreadsheet':
-            spreadsheet_id = first_file['id']
-            sheet_name = 'Sheet1'
-            row_values = ['Questo', 'è', 'un', 'test']
-            append_row_to_sheet(sheets_service, spreadsheet_id, sheet_name, row_values)
-            print(f"Riga aggiunta al foglio '{sheet_name}' nel file '{first_file['name']}' (ID: {spreadsheet_id})")
-        else:
-            print("Il primo file nell'elenco non è un foglio di Google Sheet.")
+
+        target_file = items[0]
+        spreadsheet_id = target_file['id']
+        sheet_name = 'Sheet1'
+        row_values = ['esempio prova ']
+        append_row_to_sheet(sheets_service, spreadsheet_id, sheet_name, row_values)
+        print(f"Riga aggiunta al foglio '{sheet_name}' nel file '{target_file['name']}' (ID: {spreadsheet_id})")
 
     except HttpError as error:
         print(f'An error occurred: {error}')
 
 if __name__ == '__main__':
-    main() #run
+    main()
