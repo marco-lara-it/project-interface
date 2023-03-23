@@ -20,6 +20,12 @@ def append_row_to_sheet(service, spreadsheet_id, sheet_name, row_values):
         valueInputOption='RAW', insertDataOption='INSERT_ROWS', body=body).execute()
     return result
 
+def read_sheet_content(service, spreadsheet_id, range_name):
+    result = service.spreadsheets().values().get(
+        spreadsheetId=spreadsheet_id, range=range_name).execute()
+    values = result.get('values', [])
+    return values
+
 def main():
     creds = None
     if os.path.exists('token.json'):
@@ -46,13 +52,20 @@ def main():
         if not items:
             print('File "valuesdoc" non trovato.')
             return
-
+        # aggiunge testo
         target_file = items[0]
         spreadsheet_id = target_file['id']
         sheet_name = 'Sheet1'
         row_values = ['esempio prova ']
         append_row_to_sheet(sheets_service, spreadsheet_id, sheet_name, row_values)
         print(f"Riga aggiunta al foglio '{sheet_name}' nel file '{target_file['name']}' (ID: {spreadsheet_id})")
+
+        # Leggere
+        content_range = 'A1:AA1000'  
+        content = read_sheet_content(sheets_service, spreadsheet_id, content_range)
+        print("Contenuto del foglio di lavoro:")
+        for row in content:
+            print(row)
 
     except HttpError as error:
         print(f'An error occurred: {error}')
