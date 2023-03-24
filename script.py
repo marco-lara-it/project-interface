@@ -1,4 +1,3 @@
-import pandas as pd
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow, Flow
 from google.auth.transport.requests import Request
@@ -49,8 +48,17 @@ def write_data_to_sheet(sheet_id, range_name, data):
 
 def main():
     # Scrivi i dati nel foglio
-    data_to_write = [['Nuovo dato 1'], ['Nuovo dato 8'], ['Nuovo dato 3'], ['Nuovo dato 2'], ['Nuovo dato 2']]
-    write_data_to_sheet(SAMPLE_SPREADSHEET_ID_input, 'A1', data_to_write)
+    data_to_write = [
+        ['Nome', 'Cognome', 'Età'],
+        ['Mario', 'Rossi', '30'],
+        ['Giuseppe', 'Verdi', '25'],
+        ['Luigi', 'Bianchi', '40']
+    ]
+    write_data_to_sheet(SAMPLE_SPREADSHEET_ID_input, 'A1:C1', [data_to_write[0]])
+    write_data_to_sheet(SAMPLE_SPREADSHEET_ID_input, 'A2:C2', [data_to_write[1]])
+    write_data_to_sheet(SAMPLE_SPREADSHEET_ID_input, 'A3:C3', [data_to_write[2]])
+    write_data_to_sheet(SAMPLE_SPREADSHEET_ID_input, 'A4:C4', [data_to_write[3]]) #posso creare un loop con magari un contatore
+
 
     # Recupera i dati dal foglio di lavoro e stampa il contenuto
     values_input = get_sheet_data(SAMPLE_SPREADSHEET_ID_input, SAMPLE_RANGE_NAME)
