@@ -35,7 +35,7 @@ class MyApp(QWidget):
         self.setWindowTitle('Inserisci i dati')
         self.setGeometry(300, 300, 300, 100)
         font = QFont()
-        font.setPointSize(12)
+        font.setPointSize(13)
         self.label1 = QLabel('Nome')
         self.label1.setFont(font)
         self.input1 = QLineEdit()
