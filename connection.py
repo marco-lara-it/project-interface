@@ -62,7 +62,7 @@ class MyApp(QWidget):
         self.setLayout(vbox)
         self.show()
 
-    def salva_dati(self):
+    def salva_dati(self): #attenzione range
         nome= self.input1.text()
         cognome = self.input2.text()
         eta = self.input3.text()
