@@ -8,6 +8,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow, Flow
 from google.auth.transport.requests import Request
 from tkinter import messagebox
 
+
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 SAMPLE_SPREADSHEET_ID_input = '1ssWRMfTWKkjD-JdC2Vp2r6b9NlMsh7omqNq_bRW-kdw'
 SAMPLE_RANGE_NAME = 'A1:AA1000'
@@ -41,40 +42,48 @@ class MyApp(tk.Frame):
         self.initUI()
 
     def initUI(self):
-        font = ('TkDefaultFont', 13)
+        font = ('TkDefaultFont', 15)
 
-        tk.Label(self.master, text='Nome:', font=font).grid(row=0, column=0, sticky='w', padx=10, pady=10)
+        tk.Label(self.master, text='Nome:', font=font, anchor='w').grid(row=0, column=0, padx=10, pady=10)
         self.input1 = tk.Entry(self.master, font=font)
         self.input1.grid(row=0, column=1, padx=10, pady=10)
 
-        tk.Label(self.master, text='Cognome:', font=font).grid(row=1, column=0, sticky='w', padx=10, pady=10)
+        tk.Label(self.master, text='Cognome:', font=font, anchor='w').grid(row=1, column=0, padx=10, pady=10)
         self.input2 = tk.Entry(self.master, font=font)
         self.input2.grid(row=1, column=1, padx=10, pady=10)
 
-        tk.Label(self.master, text='Età:', font=font).grid(row=2, column=0, sticky='w', padx=10, pady=10)
+        tk.Label(self.master, text='Età:', font=font, anchor='w').grid(row=2, column=0, padx=10, pady=10)
         self.input3 = tk.Entry(self.master, font=font)
         self.input3.grid(row=2, column=1, padx=10, pady=10)
-        tk.Button(self.master, text='Salva', font=font, command=self.salva_dati).grid(row=3, column=0, columnspan=2, pady=10)
-        
-        # casella di testo
-        self.textbox = tk.Text(self.master, font=font, state='disabled')
+
+        tk.Button(self.master, text='Salva', font=font, command=self.salva_dati, width=15).grid(row=3, column=0, columnspan=2, pady=10)
+
+        self.textbox = tk.Text(self.master, font=font, state='disabled', wrap='none', height=10)
         self.textbox.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky='nsew')
+        #scroll bar
+        scrollbar = tk.Scrollbar(self.master, command=self.textbox.yview)
+        scrollbar.grid(row=4, column=2, sticky='ns')
+        self.textbox.configure(yscrollcommand=scrollbar.set)
+
         ttk.Separator(self.master, orient='horizontal').grid(row=5, column=0, columnspan=2, pady=10, sticky='ew')
 
         # pulsante 
-        tk.Button(self.master, text='Aggiorna dati', font=font, command=self.update_data).grid(row=6, column=0, columnspan=2, pady=10)
-        
+        tk.Button(self.master, text='Aggiorna dati', font=font, command=self.update_data, width=15).grid(row=6, column=0, columnspan=2, pady=10)
+
+        # eventi
         self.input3.bind('<Return>', lambda event: self.salva_dati()) #invio
         self.input1.focus_set()#focus inizio
         self.input1.icursor(tk.END)#cursor
 
+        # tema
+        style = ttk.Style()
+        style.theme_use('default')
+        style.configure('TLabel', font=font, padding=10)
+        style.configure('TEntry', font=font, padding=10)
+        style.configure('TButton', font=font, padding=10)
 
-        # Creo casella di testo in sola lettura
-        self.textbox = tk.Text(self.master, font=font, wrap='none', state='disabled')
-        self.textbox.grid(row=4, column=0, columnspan=2, padx=10, pady=10)
-
-        # Scrivo
         self.update_data()
+
     def update_data(self):
         #  Google Sheet
         gs = gspread.authorize(creds)
