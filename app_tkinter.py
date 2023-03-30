@@ -7,6 +7,7 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow, Flow
 from google.auth.transport.requests import Request
 from tkinter import messagebox
+from datetime import datetime
 
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
@@ -32,33 +33,34 @@ class MyApp(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
         self.master = master
-        self.master.title('Inserisci i dati')
+        self.master.title('INTERFACE PROJECT')
         
-        # Impostiamo le dimensioni della finestra come la metà dello schermo
+        # Impostiamo le dimensioni della finestra larga 2/3
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
-        self.master.geometry(f"{screen_width//2}x{screen_height}")#cambiare
-        self.master.resizable(True, True) #adattare le dimensioni
+        screen_width = int(screen_width * 2 / 3)
+        self.master.geometry(f"{screen_width}x{screen_height}")
+        self.master.resizable(True, True) #utente adatta le dimensioni
         self.initUI()
 
     def initUI(self):
         font = ('TkDefaultFont', 15)
-
+        #nome
         tk.Label(self.master, text='Nome:', font=font, anchor='w').grid(row=0, column=0, padx=10, pady=10)
         self.input1 = tk.Entry(self.master, font=font)
         self.input1.grid(row=0, column=1, padx=10, pady=10)
-
+        #cognome
         tk.Label(self.master, text='Cognome:', font=font, anchor='w').grid(row=1, column=0, padx=10, pady=10)
         self.input2 = tk.Entry(self.master, font=font)
         self.input2.grid(row=1, column=1, padx=10, pady=10)
-
+        #età
         tk.Label(self.master, text='Età:', font=font, anchor='w').grid(row=2, column=0, padx=10, pady=10)
         self.input3 = tk.Entry(self.master, font=font)
         self.input3.grid(row=2, column=1, padx=10, pady=10)
-
+        #Salva
         tk.Button(self.master, text='Salva', font=font, command=self.salva_dati, width=15).grid(row=3, column=0, columnspan=2, pady=10)
-
-        self.textbox = tk.Text(self.master, font=font, state='disabled', wrap='none', height=10)
+        #text box
+        self.textbox = tk.Text(self.master, font=('TkDefaultFont', 18), state='disabled', wrap='none', height=10)
         self.textbox.grid(row=4, column=0, columnspan=2, padx=10, pady=10, sticky='nsew')
         #scroll bar
         scrollbar = tk.Scrollbar(self.master, command=self.textbox.yview)
@@ -81,6 +83,8 @@ class MyApp(tk.Frame):
         style.configure('TLabel', font=font, padding=10)
         style.configure('TEntry', font=font, padding=10)
         style.configure('TButton', font=font, padding=10)
+
+        tk.Label(self.master, text='APPLICAZIONE DI PROVA, KEEP IN TOUCH :P', font=('TkDefaultFont', 28)).grid(row=8, column=0, columnspan=2, pady=10)
 
         self.update_data()
 
