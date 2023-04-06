@@ -99,6 +99,56 @@ class Bilancio(tk.Frame):
         super().__init__(parent)
         self.controller = controller
 
+        self.setup_frames()
+        self.setup_header()
+        self.setup_causale()
+        self.setup_importo()
+        self.setup_data()
+        self.setup_salva_button()
+        self.setup_textbox_and_scrollbar()
+        self.setup_aggiorna_button()
+        self.update_data()
+
+    def setup_frames(self):
+        self.header_frame = tk.Frame(self)
+        self.header_frame.pack(fill=tk.X, padx=10, pady=10)
+
+        self.causale_frame = tk.Frame(self)
+        self.causale_frame.pack(side="top", anchor="w", padx=10, pady=10)
+
+        self.importo_frame = tk.Frame(self)
+        self.importo_frame.pack(side="top", anchor="w", padx=10, pady=10)
+
+        self.data_frame = tk.Frame(self)
+        self.data_frame.pack(side="top", anchor="w", padx=10, pady=10)
+
+        self.text_frame = tk.Frame(self)
+        self.text_frame.pack(fill=tk.BOTH, padx=10, pady=10, expand=True)
+
+    def setup_header(self):
+        label = ttk.Label(self.header_frame, text='Bilancio', font=('DefaultFont', 20))
+        label.pack(side=tk.LEFT, padx=10, pady=10)
+        button = ttk.Button(self.header_frame, text='Go back to Home Page', command=lambda: self.controller.show_frame(HomePage))
+        button.pack(side=tk.RIGHT, padx=10, pady=10)
+
+    def setup_causale(self):
+        font = ('TkDefaultFont', 16)
+        input_width = 25
+
+        ttk.Label(self.causale_frame, text='Causale:', font=font).pack(side="left", padx=10)
+        self.causale_options = ['Personale', 'Fornitori', 'Gestionale']
+        self.causale_var = tk.StringVar()
+        self.input1 = ttk.Combobox(self.causale_frame, textvariable=self.causale_var, values=self.causale_options, state='readonly', width=input_width)
+        self.input1.set(self.causale_options[0])  # Set the default option
+        self.input1.pack(side="left", padx=10)
+        self.input1.bind('<Return>', lambda event: self.salva_dati())
+
+
+
+    def setup_importo(self):
+        font = ('TkDefaultFont', 16)
+        input_width = 25
+
         def validate_numeric_input(new_value):
             if new_value == "":
                 return True
@@ -108,101 +158,58 @@ class Bilancio(tk.Frame):
             except ValueError:
                 return False
 
-        # Crea un frame per contenere la label e il pulsante
-        header_frame = tk.Frame(self)
-        header_frame.pack(fill=tk.X, padx=10, pady=10)
+        vcmd = (self.register(validate_numeric_input), "%P")
+        ttk.Label(self.importo_frame, text='Importo:', font=font).pack(side="left", padx=10)
+        self.input2 = ttk.Entry(self.importo_frame, validate="key", validatecommand=vcmd, width=input_width)
+        self.input2.pack(side="left", padx=10)
+        self.input2.bind('<Return>', lambda event: self.salva_dati())
 
-        # Label 'Bilancio'
-        label = ttk.Label(header_frame, text='Bilancio', font=('DefaultFont', 20))
-        label.pack(side=tk.LEFT, padx=10, pady=10)
-        # Pulsante 'Go back to Home Page'
-        button = ttk.Button(header_frame, text='Go back to Home Page', command=lambda: controller.show_frame(HomePage))
-        button.pack(side=tk.RIGHT, padx=10, pady=10)
 
-        font = ('TkDefaultFont', 18)
-        input_width = 20
+    def setup_data(self):
+        font = ('TkDefaultFont', 16)
+        input_width = 25
 
-        #causale
-        causale_frame = tk.Frame(self)
-        causale_frame.pack(fill=tk.X, padx=10, pady=10)
-        tk.Label(causale_frame, text='Causale:', font=font, anchor='w').pack(side=tk.LEFT, padx=10)
-        causale_var = tk.StringVar(self)
-        causale_var.set("Seleziona causale") 
-        opzioni_causale = ["Magazzino", "Personale", "Gestione"] 
-        self.input1 = ttk.Combobox(causale_frame, font=font, textvariable=causale_var, values=opzioni_causale, state='readonly', width=input_width)
-        self.input1.pack(side=tk.LEFT, padx=10)
-        self.input1.bind("<FocusIn>", lambda event: self.input1.configure(values=opzioni_causale))
+        ttk.Label(self.data_frame, text='Data:', font=font).pack(side="left", padx=10)
+        self.input3 = DateEntry(self.data_frame, date_pattern='dd.mm.yyyy', background='darkblue', foreground='white', borderwidth=2, width=input_width)
+        self.input3.pack(side="left", padx=10)
+        self.input3.bind('<Return>', lambda event: self.salva_dati())
 
-        # Importo
-        importo_frame = tk.Frame(self)
-        importo_frame.pack(fill=tk.X, padx=10, pady=10)
-        tk.Label(importo_frame, text='Importo:', font=font, anchor='w').pack(side=tk.LEFT, padx=10)
-        vcmd = (self.register(validate_numeric_input), '%P')
-        style = ttk.Style()
-        style.configure('Custom.TEntry', height=1)
-        self.input2 = ttk.Entry(importo_frame, font=font, width=20, validate="key", validatecommand=vcmd, style='Custom.TEntry')
-        self.input2.pack(side=tk.LEFT, padx=10)
-
-        # Data
-        data_frame = tk.Frame(self)
-        data_frame.pack(fill=tk.X, padx=10, pady=10)
-        today = date.today()
-        tk.Label(data_frame, text='Data:', font=font, anchor='w').pack(side=tk.LEFT, padx=10)
-        self.input3 = DateEntry(data_frame, font=font, date_pattern='yyyy-mm-dd')
-        self.input3.set_date(today)
-        self.input3.config(state='abled')
-        self.input3.pack(side=tk.LEFT, padx=10)
-
-        # Salva
+    def setup_salva_button(self):
+        font = ('TkDefaultFont', 16)
         tk.Button(self, text='Salva', font=font, command=self.salva_dati, width=15, bg='white').pack(fill=tk.X, padx=10, pady=10)
-        text_frame = tk.Frame(self)
-        text_frame.pack(fill=tk.BOTH, padx=10, pady=10, expand=True)
 
-        # text box
-        self.textbox = tk.Text(text_frame, font=('TkDefaultFont', 18), state='disabled', wrap='none', height=10, spacing1=5, spacing2=50)
+    def setup_textbox_and_scrollbar(self):
+        font = ('TkDefaultFont', 16)
+        self.textbox = tk.Text(self.text_frame, font=font, state='disabled', wrap='none', height=10, spacing1=5, spacing2=50)
         self.textbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        # scroll bar
-        scrollbar = tk.Scrollbar(text_frame, command=self.textbox.yview)
+        scrollbar = tk.Scrollbar(self.text_frame, command=self.textbox.yview)
         scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
         self.textbox.configure(yscrollcommand=scrollbar.set)
-        ttk.Separator(self, orient='horizontal').pack(fill=tk.X, padx=10, pady=10)
 
-        # pulsante 
+    def setup_aggiorna_button(self):
+        font = ('TkDefaultFont', 16)
         tk.Button(self, text='Aggiorna dati', font=font, command=self.update_data, width=15, bg='white').pack(fill=tk.X, padx=10, pady=10)
 
-        # eventi
-        self.input3.bind('<Return>', lambda event: self.salva_dati())  # invio
-        self.input1.focus_set()  # focus inizio
-        self.input1.icursor(tk.END)  # cursor
-
-        # tema
-        style = ttk.Style()
-        style.theme_use('default')
-        style.configure('TLabel', font=font, padding=10)
-        style.configure('TEntry', font=font, padding=10)
-        style.configure('TButton', font=font, padding=10)
-        self.update_data()
-
     def update_data(self):
-        #  Google Sheet
+        # Google Sheet
         gs = gspread.authorize(creds)
         sheet = gs.open_by_key(SAMPLE_SPREADSHEET_ID_input).sheet1
         data = sheet.get_all_values()
 
-        # Creo dati 
+        # Create data
         text = ''
         for row in data:
             text += '\t'.join(row) + '\n'
 
-        # casella di testo
+        # Text box
         self.textbox.config(state='normal')
         self.textbox.delete('1.0', tk.END)
         self.textbox.insert(tk.END, text)
         self.textbox.config(state='disabled')
 
     def salva_dati(self):
-        causale = self.input1.get().strip()
+        causale = self.causale_var.get().strip()
         importo = self.input2.get().strip()
         data_selezionata = self.input3.get_date()
         data_string = data_selezionata.strftime('%Y-%m-%d')
