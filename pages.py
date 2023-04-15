@@ -7,6 +7,7 @@ from tkinter import messagebox
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow, Flow
 from google.auth.transport.requests import Request
+import calendar
 from datetime import date
 from tkcalendar import DateEntry
 from PIL import Image, ImageTk
@@ -182,7 +183,6 @@ class Bilancio(tk.Frame):
     def setup_data(self):
         font = ('TkDefaultFont', 16)
         input_width = 25
-
         ttk.Label(self.data_frame, text='Data:', font=font).pack(side="left", padx=10)
         self.input3 = DateEntry(self.data_frame, date_pattern='dd.mm.yyyy', background='darkblue', foreground='white', borderwidth=2, width=input_width)
         self.input3.pack(side="left", padx=10)
@@ -210,16 +210,13 @@ class Bilancio(tk.Frame):
         tk.Button(self, text='Aggiorna dati', font=font, command=self.update_data, width=15, bg='white').pack(fill=tk.X, padx=10, pady=10)
 
     def update_data(self):
-            # Google Sheet
             gs = gspread.authorize(creds)
             sheet = gs.open_by_key(SAMPLE_SPREADSHEET_ID_input).sheet1
             data = sheet.get_all_values()
 
-            # Clear the treeview
             for i in self.tree.get_children():
                 self.tree.delete(i)
 
-            # Insert data into the treeview
             for row in data:
                 self.tree.insert('', 'end', values=row)
 
