@@ -9,6 +9,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow, Flow
 from google.auth.transport.requests import Request
 from datetime import date
 from tkcalendar import DateEntry
+from PIL import Image, ImageTk
 
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 SAMPLE_SPREADSHEET_ID_input = '1ssWRMfTWKkjD-JdC2Vp2r6b9NlMsh7omqNq_bRW-kdw'
@@ -54,7 +55,7 @@ class MyApp(tk.Frame):
 
         self.frames = {}
 
-        for F in (HomePage, Bilancio, PageTwo):
+        for F in (HomePage, Bilancio, Clienti):
             frame = F(container, self)
             self.frames[F] = frame
             frame.pack(fill='both', expand=True)
@@ -72,27 +73,40 @@ class HomePage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
-        label = ttk.Label(self,text='Home Page', font=('TkDefaultFont', 20))
-        label.pack(padx=10, pady=10)
+
+        # Header
+        label = ttk.Label(self, text='Home Page', font=('TkDefaultFont', 20))
+        label.grid(row=0, column=0, columnspan=2, pady=20)
+
+        # Description
         description_label = tk.Label(self, text='Benvenuto nell\'applicazione di prova.\n'
-                                            'Questa è la Home Page, da qui puoi accedere alle diverse funzionalità.\n'
-                                            'Scegli una delle opzioni dal menu per iniziare!', 
-                                            font=('TkDefaultFont', 18), justify='center')
-        description_label.pack(padx=20, pady=20)
+                                                'Questa è la Home Page, da qui puoi accedere alle diverse funzionalità.\n'
+                                                'Scegli una delle opzioni dal menu per iniziare!',
+                                      font=('TkDefaultFont', 28), justify='center')
+        description_label.grid(row=1, column=0, columnspan=2, pady=20)
 
-        button_frame = tk.Frame(self)
-        button_frame.pack(side="top", fill="both", expand=True, padx=20)
+        # Bilancio button
+        bilancio_icon = Image.open("bilancio_icon.png")
+        bilancio_icon = bilancio_icon.resize((64, 64), Image.LANCZOS)
+        bilancio_icon = ImageTk.PhotoImage(bilancio_icon)
+        button1 = ttk.Button(self, text="Bilancio", image=bilancio_icon, compound=tk.TOP, command=lambda: controller.show_frame(Bilancio))
+        button1.image = bilancio_icon  
+        button1.grid(row=2, column=0, padx=20, pady=10)
 
-        left_column = tk.Frame(button_frame)
-        left_column.pack(side="left", fill="both", expand=True)
-        button1 = ttk.Button(left_column, text="Bilancio", command=lambda: controller.show_frame(Bilancio))
-        button1.pack(side="top", pady=10)
+        # Clienti button
+        clienti_icon = Image.open("clienti_icon.png")
+        clienti_icon = clienti_icon.resize((64, 64), Image.LANCZOS)
+        clienti_icon = ImageTk.PhotoImage(clienti_icon)
+        button2 = ttk.Button(self, text="Clienti", image=clienti_icon, compound=tk.TOP, command=lambda: controller.show_frame(Clienti))
+        button2.image = clienti_icon  
+        button2.grid(row=2, column=1, padx=20, pady=10)
 
-        right_column = tk.Frame(button_frame)
-        right_column.pack(side="left", fill="both", expand=True)
-        button2 = ttk.Button(right_column, text="Pagina 2", command=lambda: controller.show_frame(PageTwo))
-        button2.pack(side="top", pady=10)
-
+        # Grid configuration
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)
+        self.rowconfigure(0, weight=1)
+        self.rowconfigure(1, weight=1)
+        self.rowconfigure(2, weight=3)
 
 class Bilancio(tk.Frame):
     def __init__(self, parent, controller):
@@ -105,7 +119,7 @@ class Bilancio(tk.Frame):
         self.setup_importo()
         self.setup_data()
         self.setup_salva_button()
-        self.setup_textbox_and_scrollbar()
+        self.setup_treeview()
         self.setup_aggiorna_button()
         self.update_data()
 
@@ -178,35 +192,37 @@ class Bilancio(tk.Frame):
         font = ('TkDefaultFont', 16)
         tk.Button(self, text='Salva', font=font, command=self.salva_dati, width=15, bg='white').pack(fill=tk.X, padx=10, pady=10)
 
-    def setup_textbox_and_scrollbar(self):
-        font = ('TkDefaultFont', 16)
-        self.textbox = tk.Text(self.text_frame, font=font, state='disabled', wrap='none', height=10, spacing1=5, spacing2=50)
-        self.textbox.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+    def setup_treeview(self):
+        columns = ('Causale', 'Importo', 'Data')
+        
+        self.tree = ttk.Treeview(self.text_frame, columns=columns, show='headings', height=10)
+        for col in columns:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, stretch=True, width=150)
+        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        scrollbar = tk.Scrollbar(self.text_frame, command=self.textbox.yview)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-        self.textbox.configure(yscrollcommand=scrollbar.set)
+        vsb = ttk.Scrollbar(self.text_frame, orient="vertical", command=self.tree.yview)
+        vsb.pack(side='right', fill='y')
+        self.tree.configure(yscrollcommand=vsb.set)
 
     def setup_aggiorna_button(self):
         font = ('TkDefaultFont', 16)
         tk.Button(self, text='Aggiorna dati', font=font, command=self.update_data, width=15, bg='white').pack(fill=tk.X, padx=10, pady=10)
 
     def update_data(self):
-        # Google Sheet
-        gs = gspread.authorize(creds)
-        sheet = gs.open_by_key(SAMPLE_SPREADSHEET_ID_input).sheet1
-        data = sheet.get_all_values()
+            # Google Sheet
+            gs = gspread.authorize(creds)
+            sheet = gs.open_by_key(SAMPLE_SPREADSHEET_ID_input).sheet1
+            data = sheet.get_all_values()
 
-        # Create data
-        text = ''
-        for row in data:
-            text += '\t'.join(row) + '\n'
+            # Clear the treeview
+            for i in self.tree.get_children():
+                self.tree.delete(i)
 
-        # Text box
-        self.textbox.config(state='normal')
-        self.textbox.delete('1.0', tk.END)
-        self.textbox.insert(tk.END, text)
-        self.textbox.config(state='disabled')
+            # Insert data into the treeview
+            for row in data:
+                self.tree.insert('', 'end', values=row)
+
 
     def salva_dati(self):
         causale = self.causale_var.get().strip()
@@ -234,15 +250,58 @@ class Bilancio(tk.Frame):
             tk.messagebox.showerror('Errore', 'Inserisci tutti i dati per proseguire.')
 
 
-class PageTwo(tk.Frame):
+class Clienti(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
-        label = ttk.Label(self, text='Page Two', font=('TkDefaultFont', 20))
+        self.controller = controller
+
+        self.setup_header()
+        self.setup_treeview()
+        self.setup_buttons()
+        self.update_data()
+
+    def setup_header(self):
+        label = ttk.Label(self, text='Clienti', font=('TkDefaultFont', 20))
         label.pack(padx=10, pady=10)
-        button = ttk.Button(self, text='Go back to Home Page', command=lambda: controller.show_frame(HomePage))
-        button.pack(padx=10, pady=10)
+
+    def setup_treeview(self):
+        columns = ('Cliente', 'Pezzi venduti')
+        
+        tree_frame = ttk.Frame(self)  # Create a frame to contain the treeview and scrollbar
+        tree_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+
+        self.tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=20)  # Set the height of the treeview
+        for col in columns:
+            self.tree.heading(col, text=col)
+            self.tree.column(col, stretch=True, width=200)  # Set the width of the columns
+        self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+
+        vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
+        vsb.pack(side='right', fill='y')
+        self.tree.configure(yscrollcommand=vsb.set)
+
+    def setup_buttons(self):
+        button1 = ttk.Button(self, text='Aggiorna dati', command=self.update_data)
+        button1.pack(padx=10, pady=10)
+
+        button2 = ttk.Button(self, text='Go back to Home Page', command=lambda: self.controller.show_frame(HomePage))
+        button2.pack(padx=10, pady=10)
+    
+    def update_data(self):
+        # Clear the treeview
+        for i in self.tree.get_children():
+            self.tree.delete(i)
+
+
+        # Google Sheet
+        gs = gspread.authorize(creds)
+        sheet = gs.open_by_key(SAMPLE_SPREADSHEET_ID_input)
+        sheet2 = sheet.get_worksheet(1)  # 1 indica il secondo foglio (Foglio2), poiché gli indici partono da 0
+        data = sheet2.get_all_values()
+        for row in data:
+            self.tree.insert('', 'end', values=(row[0], row[1]))
 
 if __name__ == '__main__':
     root = tk.Tk()
     ex = MyApp(root)
-    root.mainloop() 
+    root.mainloop()
