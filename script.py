@@ -58,7 +58,7 @@ def main():
     write_data_to_sheet(SAMPLE_SPREADSHEET_ID_input, 'A2:C2', [data_to_write[1]])
     write_data_to_sheet(SAMPLE_SPREADSHEET_ID_input, 'A3:C3', [data_to_write[2]])
     write_data_to_sheet(SAMPLE_SPREADSHEET_ID_input, 'A4:C4', [data_to_write[3]]) #posso creare un loop con magari un contatore
-
+    
 
     # Recupera i dati dal foglio di lavoro e stampa il contenuto
     values_input = get_sheet_data(SAMPLE_SPREADSHEET_ID_input, SAMPLE_RANGE_NAME)

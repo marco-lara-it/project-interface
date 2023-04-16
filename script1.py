@@ -52,6 +52,8 @@ def main():
         if not items:
             print('File "valuesdoc" non trovato.')
             return
+        
+        
         # aggiunge testo
         target_file = items[0]
         spreadsheet_id = target_file['id']

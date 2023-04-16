@@ -52,9 +52,8 @@ def main():
             print('No data found.')
             return
 
-        
         for row in values:
-            # Print columns A and E, which correspond to indices 0 and 4.
+            # Print columns A and B, which correspond to indices 0 and 1.
             print('%s, %s' % (row[0], row[1]))
     except HttpError as err:
         print(err)
