@@ -11,7 +11,9 @@ import calendar
 from datetime import date
 from tkcalendar import DateEntry
 from PIL import Image, ImageTk
+import pandas as pd
 
+# Costanti e configurazione
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 SAMPLE_SPREADSHEET_ID_input = '1ssWRMfTWKkjD-JdC2Vp2r6b9NlMsh7omqNq_bRW-kdw'
 SAMPLE_RANGE_NAME = 'A1:AA1000'
@@ -28,7 +30,7 @@ if not creds or not creds.valid:
         creds = flow.run_local_server(port=0)
     with open('token.pickle', 'wb') as token:
         pickle.dump(creds, token)
-
+        
 service = build('sheets', 'v4', credentials=creds)
 
 class MyApp(tk.Frame):
@@ -56,7 +58,7 @@ class MyApp(tk.Frame):
 
         self.frames = {}
 
-        for F in (HomePage, Bilancio, Clienti):
+        for F in (HomePage, Bilancio, Clienti, Indicatori):
             frame = F(container, self)
             self.frames[F] = frame
             frame.pack(fill='both', expand=True)
@@ -74,40 +76,44 @@ class HomePage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
-
-        # Header
         label = ttk.Label(self, text='Home Page', font=('TkDefaultFont', 20))
-        label.grid(row=0, column=0, columnspan=2, pady=20)
-
-        # Description
+        label.grid(row=0, column=0, columnspan=3, pady=20)
         description_label = tk.Label(self, text='Benvenuto nell\'applicazione di prova.\n'
                                                 'Questa è la Home Page, da qui puoi accedere alle diverse funzionalità.\n'
                                                 'Scegli una delle opzioni dal menu per iniziare!',
-                                      font=('TkDefaultFont', 28), justify='center')
-        description_label.grid(row=1, column=0, columnspan=2, pady=20)
-
-        # Bilancio button
+                                      font=('TkDefaultFont', 26), justify='center')
+        description_label.grid(row=1, column=0, columnspan=3, pady=20)
         bilancio_icon = Image.open("bilancio_icon.png")
         bilancio_icon = bilancio_icon.resize((64, 64), Image.LANCZOS)
         bilancio_icon = ImageTk.PhotoImage(bilancio_icon)
         button1 = ttk.Button(self, text="Bilancio", image=bilancio_icon, compound=tk.TOP, command=lambda: controller.show_frame(Bilancio))
         button1.image = bilancio_icon  
         button1.grid(row=2, column=0, padx=20, pady=10)
-
-        # Clienti button
         clienti_icon = Image.open("clienti_icon.png")
         clienti_icon = clienti_icon.resize((64, 64), Image.LANCZOS)
         clienti_icon = ImageTk.PhotoImage(clienti_icon)
         button2 = ttk.Button(self, text="Clienti", image=clienti_icon, compound=tk.TOP, command=lambda: controller.show_frame(Clienti))
         button2.image = clienti_icon  
         button2.grid(row=2, column=1, padx=20, pady=10)
-
-        # Grid configuration
+        indicatori_icon = Image.open("indicatori_icon.png")
+        indicatori_icon = indicatori_icon.resize((64, 64), Image.LANCZOS)
+        indicatori_icon = ImageTk.PhotoImage(indicatori_icon)
+        button3 = ttk.Button(self, text="Indicatori", image=indicatori_icon, compound=tk.TOP, command=lambda: controller.show_frame(Indicatori))
+        button3.image = indicatori_icon
+        button3.grid(row=2, column=2, padx=20, pady=10)
+        home_icon = Image.open("home_icon.png")
+        home_icon = home_icon.resize((32, 32), Image.LANCZOS)
+        home_icon = ImageTk.PhotoImage(home_icon)
+        button4 = ttk.Button(self, text="Home", image=home_icon, compound=tk.TOP, command=lambda: controller.show_frame(HomePage))
+        button4.image = home_icon
+        button4.grid(row=3, column=1, padx=20, pady=10)
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
+        self.columnconfigure(2, weight=1)
         self.rowconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
         self.rowconfigure(2, weight=3)
+        self.rowconfigure(3, weight=1)
 
 class Bilancio(tk.Frame):
     def __init__(self, parent, controller):
@@ -119,6 +125,7 @@ class Bilancio(tk.Frame):
         self.setup_causale()
         self.setup_importo()
         self.setup_data()
+        self.setup_indicator()
         self.setup_salva_button()
         self.setup_treeview()
         self.setup_aggiorna_button()
@@ -127,16 +134,14 @@ class Bilancio(tk.Frame):
     def setup_frames(self):
         self.header_frame = tk.Frame(self)
         self.header_frame.pack(fill=tk.X, padx=10, pady=10)
-
-        self.causale_frame = tk.Frame(self)
+        self.causale_frame = tk.Frame(self) 
         self.causale_frame.pack(side="top", anchor="w", padx=10, pady=10)
-
         self.importo_frame = tk.Frame(self)
         self.importo_frame.pack(side="top", anchor="w", padx=10, pady=10)
-
         self.data_frame = tk.Frame(self)
         self.data_frame.pack(side="top", anchor="w", padx=10, pady=10)
-
+        self.indicator_frame = tk.Frame(self)
+        self.indicator_frame.pack(side="top", anchor="e", padx=10, pady=10)
         self.text_frame = tk.Frame(self)
         self.text_frame.pack(fill=tk.BOTH, padx=10, pady=10, expand=True)
 
@@ -145,11 +150,25 @@ class Bilancio(tk.Frame):
         label.pack(side=tk.LEFT, padx=10, pady=10)
         button = ttk.Button(self.header_frame, text='Go back to Home Page', command=lambda: self.controller.show_frame(HomePage))
         button.pack(side=tk.RIGHT, padx=10, pady=10)
+    
+    def setup_indicator(self):
+        font = ('TkDefaultFont', 16)
 
+        ttk.Label(self.indicator_frame, text='Somma degli importi:', font=font).pack(side="left", padx=10)
+        self.somma_importi_label = ttk.Label(self.indicator_frame, text='', font=font)
+        self.somma_importi_label.pack(side="left", padx=10)
+        self.update_somma_importi()
+
+    def update_somma_importi(self):
+        gs = gspread.authorize(creds)
+        sheet = gs.open_by_key(SAMPLE_SPREADSHEET_ID_input).sheet1
+        data = sheet.get_all_values()
+        somma_importi = sum(float(row[1]) for row in data if row[1])
+        self.somma_importi_label.config(text='€ {:.2f}'.format(somma_importi))
+        
     def setup_causale(self):
         font = ('TkDefaultFont', 16)
         input_width = 25
-
         ttk.Label(self.causale_frame, text='Causale:', font=font).pack(side="left", padx=10)
         self.causale_options = ['Personale', 'Fornitori', 'Gestionale']
         self.causale_var = tk.StringVar()
@@ -157,8 +176,6 @@ class Bilancio(tk.Frame):
         self.input1.set(self.causale_options[0])  # Set the default option
         self.input1.pack(side="left", padx=10)
         self.input1.bind('<Return>', lambda event: self.salva_dati())
-
-
 
     def setup_importo(self):
         font = ('TkDefaultFont', 16)
@@ -178,7 +195,6 @@ class Bilancio(tk.Frame):
         self.input2 = ttk.Entry(self.importo_frame, validate="key", validatecommand=vcmd, width=input_width)
         self.input2.pack(side="left", padx=10)
         self.input2.bind('<Return>', lambda event: self.salva_dati())
-
 
     def setup_data(self):
         font = ('TkDefaultFont', 16)
@@ -213,13 +229,12 @@ class Bilancio(tk.Frame):
             gs = gspread.authorize(creds)
             sheet = gs.open_by_key(SAMPLE_SPREADSHEET_ID_input).sheet1
             data = sheet.get_all_values()
-
             for i in self.tree.get_children():
                 self.tree.delete(i)
-
             for row in data:
                 self.tree.insert('', 'end', values=row)
 
+            self.update_somma_importi()
 
     def salva_dati(self):
         causale = self.causale_var.get().strip()
@@ -285,18 +300,50 @@ class Clienti(tk.Frame):
         button2.pack(padx=10, pady=10)
     
     def update_data(self):
-        # Clear the treeview
         for i in self.tree.get_children():
             self.tree.delete(i)
-
-
-        # Google Sheet
         gs = gspread.authorize(creds)
         sheet = gs.open_by_key(SAMPLE_SPREADSHEET_ID_input)
         sheet2 = sheet.get_worksheet(1)  # 1 indica il secondo foglio (Foglio2), poiché gli indici partono da 0
         data = sheet2.get_all_values()
         for row in data:
             self.tree.insert('', 'end', values=(row[0], row[1]))
+
+class Indicatori(tk.Frame):
+
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        self.controller = controller
+        label = ttk.Label(self, text='Indicatori', font=('TkDefaultFont', 30))
+        label.pack(padx=50, pady=50)
+        description_label = tk.Label(self, text='Questa pagina mostra alcuni indicatori.', font=('TkDefaultFont', 20))
+        description_label.pack(padx=50, pady=10)
+        indicator_frame = tk.Frame(self)
+        indicator_frame.pack(padx=50, pady=50)
+        somma_col2 = get_sum_of_column_2()
+        tk.Label(indicator_frame, text='Somma delle spese registrate:', font=('TkDefaultFont', 24)).grid(row=0, column=0, padx=10, pady=10, sticky='w')
+        self.somma_col2_label = tk.Label(indicator_frame, text='€ {:.2f}'.format(somma_col2), font=('TkDefaultFont', 24))
+        self.somma_col2_label.grid(row=0, column=1, padx=10, pady=10, sticky='e')
+        update_button = ttk.Button(self, text='Aggiorna Indicatori', command=self.update_indicators)
+        update_button.pack(pady=20)
+        back_button = ttk.Button(self, text='Torna alla Homepage', command=lambda: controller.show_frame(HomePage))
+        back_button.pack(pady=50)
+
+    def update_indicators(self):
+        somma_col2 = get_sum_of_column_2()
+        self.somma_col2_label.config(text='€ {:.2f}'.format(somma_col2))
+
+def get_gspread_client():
+
+    credentials_filename = "/Users/marcolara/codice/project-interface/client_secret.json"
+    return gspread.oauth(credentials_filename=credentials_filename)
+
+def get_sum_of_column_2():
+    gc = get_gspread_client()
+    worksheet_name = 'Foglio1'
+    sh = gc.open('valuesdoc').worksheet(worksheet_name)
+    col_values = sh.col_values(2)
+    return sum(float(val) for val in col_values if val)
 
 if __name__ == '__main__':
     root = tk.Tk()
