@@ -7,7 +7,7 @@ from tkinter import messagebox
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow, Flow
 from google.auth.transport.requests import Request
-import calendar
+from tkcalendar import DateEntry
 from datetime import date
 from tkcalendar import DateEntry
 from PIL import Image, ImageTk
@@ -46,6 +46,7 @@ class MyApp(tk.Frame):
         self.master.geometry(f"{screen_width}x{screen_height}")
         self.master.resizable(True, True)
         self.initUI()
+        self.pack()
 
     def initUI(self):
         self.style = ttk.Style()
@@ -62,16 +63,21 @@ class MyApp(tk.Frame):
         for F in (LoginPage, HomePage, Bilancio, Clienti, Indicatori):
             frame = F(container, self)
             self.frames[F] = frame
-            frame.pack(fill='both', expand=True)
+            # frame.pack(fill='both', expand=True)  # Commenta questa riga
 
-        self.show_frame(LoginPage)
-
-
-    def show_frame(self, cont):
+        # Nascondi tutti i frame eccetto LoginPage
         for frame in self.frames.values():
             frame.pack_forget()
-        frame = self.frames[cont]
+        self.frames[LoginPage].pack(fill='both', expand=True)
+
+        # Aggiungi questa riga per impacchettare il container
+        container.pack(fill='both', expand=True)
+    def show_frame(self, frame_class):
+        frame = self.frames[frame_class]
+        for f in self.frames.values():
+            f.pack_forget()
         frame.pack(fill='both', expand=True)
+
 
 class LoginPage(tk.Frame):
     def __init__(self, parent, controller):
@@ -165,8 +171,7 @@ class LoginPage(tk.Frame):
         if new_password != new_password_confirm:
             tk.messagebox.showerror("Errore", "Le due password non corrispondono")
             return
-
-        # Aggiungi le nuove credenziali al foglio di Google Sheets
+        
         try:
             # Ottieni i dati attuali dal foglio di Google Sheets
             sheet = service.spreadsheets().values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID_input, range="Foglio3!A:B").execute()
