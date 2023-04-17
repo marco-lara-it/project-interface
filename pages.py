@@ -83,7 +83,7 @@ class LoginPage(tk.Frame):
         self.login_frame = ttk.Frame(self)
         self.login_frame.pack(expand=True)
 
-        # Aggiungi la scritta
+        # Aggiungi le istruzioni
         self.instructions_label = ttk.Label(self.login_frame, text="Inserisci l'username e la password per accedere all'app:")
         self.instructions_label.pack(pady=10)
 
