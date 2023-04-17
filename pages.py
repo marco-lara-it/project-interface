@@ -11,6 +11,7 @@ import calendar
 from datetime import date
 from tkcalendar import DateEntry
 from PIL import Image, ImageTk
+from googleapiclient.errors import HttpError
 import pandas as pd
 
 # Costanti e configurazione
@@ -100,6 +101,10 @@ class LoginPage(tk.Frame):
         self.login_button = ttk.Button(self.login_frame, text="Login", command=self.login)
         self.login_button.pack(side="top", padx=10, pady=10)
 
+        self.add_credentials_button = ttk.Button(self.login_frame, text="Registrati", command=self.create_credentials)
+        self.add_credentials_button.pack(side="top", padx=10, pady=10)
+
+
         # Aggiungi l'opzione di premere il tasto Invio per confermare la login
         self.username_entry.bind("<Return>", lambda event: self.password_entry.focus())
         self.password_entry.bind("<Return>", lambda event: self.login())
@@ -108,11 +113,86 @@ class LoginPage(tk.Frame):
         username = self.username_entry.get()
         password = self.password_entry.get()
 
-        # Controlla le credenziali dell'utente
-        if username == "admin" and password == "password":
-            self.controller.show_frame(HomePage)
-        else:
+        # Verifica le credenziali dell'utente nel foglio di Google Sheets
+        try:
+            sheet = service.spreadsheets().values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID_input, range="Foglio3!A:B").execute()
+            values = sheet.get('values', [])
+
+            for row in values:
+                if len(row) >= 2 and row[0] == username and row[1] == password:
+                    self.controller.show_frame(HomePage)
+                    return
+
+            # Se le credenziali non sono corrette, mostra un messaggio di errore
             tk.messagebox.showerror("Errore", "Username o password non corretti")
+
+        except HttpError as error:
+            print(f"Si è verificato un errore: {error}")
+            tk.messagebox.showerror("Errore", "Impossibile accedere al foglio di Google Sheets")
+
+    def create_credentials(self):
+        # Crea una finestra di dialogo per l'inserimento di un nuovo username e una nuova password
+        new_credentials_window = tk.Toplevel(self.master)
+        new_credentials_window.title("Crea nuove credenziali")
+
+        new_credentials_frame = ttk.Frame(new_credentials_window)
+        new_credentials_frame.pack(expand=True)
+
+        new_username_label = ttk.Label(new_credentials_frame, text="Nuovo Username:")
+        new_username_label.pack(side="top", padx=10, pady=10)
+        self.new_username_entry = ttk.Entry(new_credentials_frame)
+        self.new_username_entry.pack(side="top", padx=10, pady=10)
+
+        new_password_label = ttk.Label(new_credentials_frame, text="Nuova Password:")
+        new_password_label.pack(side="top", padx=10, pady=10)
+        self.new_password_entry = ttk.Entry(new_credentials_frame, show="*")
+        self.new_password_entry.pack(side="top", padx=10, pady=10)
+
+        new_password_confirm_label = ttk.Label(new_credentials_frame, text="Conferma Password:")
+        new_password_confirm_label.pack(side="top", padx=10, pady=10)
+        self.new_password_confirm_entry = ttk.Entry(new_credentials_frame, show="*")
+        self.new_password_confirm_entry.pack(side="top", padx=10, pady=10)
+
+        add_credentials_button = ttk.Button(new_credentials_frame, text="Aggiungi", command=lambda: self.add_credentials(new_credentials_window))
+        add_credentials_button.pack(side="top", padx=10, pady=10)
+
+    
+    def add_credentials(self, new_credentials_window):
+        new_username = self.new_username_entry.get()
+        new_password = self.new_password_entry.get()
+        new_password_confirm = self.new_password_confirm_entry.get()
+
+        if new_password != new_password_confirm:
+            tk.messagebox.showerror("Errore", "Le due password non corrispondono")
+            return
+
+        # Aggiungi le nuove credenziali al foglio di Google Sheets
+        try:
+            # Ottieni i dati attuali dal foglio di Google Sheets
+            sheet = service.spreadsheets().values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID_input, range="Foglio3!A:B").execute()
+            values = sheet.get('values', [])
+
+            # Controlla se l'username esiste già
+            for row in values:
+                if row[0] == new_username:
+                    tk.messagebox.showerror("Errore", "Username già esistente")
+                    return
+
+            # Aggiungi le nuove credenziali alla fine del foglio di Google Sheets
+            values.append([new_username, new_password])
+
+            # Aggiorna i dati sul foglio di Google Sheets
+            result = service.spreadsheets().values().update(
+                spreadsheetId=SAMPLE_SPREADSHEET_ID_input, range="Foglio3!A:B",
+                valueInputOption="USER_ENTERED", body={"values": values}).execute()
+
+            # Chiudi la finestra di dialogo
+            new_credentials_window.destroy()
+
+        except HttpError as error:
+            print(f"Si è verificato un errore: {error}")
+            tk.messagebox.showerror("Errore", "Impossibile aggiungere nuove credenziali al foglio di Google Sheets")
+
 
 
 
