@@ -30,14 +30,14 @@ if not creds or not creds.valid:
         creds = flow.run_local_server(port=0)
     with open('token.pickle', 'wb') as token:
         pickle.dump(creds, token)
-        
+
 service = build('sheets', 'v4', credentials=creds)
 
 class MyApp(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
         self.master = master
-        self.master.title('INTERFACE PROJECT')
+        self.master.title('MANAGING APP')
 
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
@@ -58,18 +58,62 @@ class MyApp(tk.Frame):
 
         self.frames = {}
 
-        for F in (HomePage, Bilancio, Clienti, Indicatori):
+        for F in (LoginPage, HomePage, Bilancio, Clienti, Indicatori):
             frame = F(container, self)
             self.frames[F] = frame
             frame.pack(fill='both', expand=True)
 
-        self.show_frame(HomePage)
+        self.show_frame(LoginPage)
+
 
     def show_frame(self, cont):
         for frame in self.frames.values():
             frame.pack_forget()
         frame = self.frames[cont]
         frame.pack(fill='both', expand=True)
+
+class LoginPage(tk.Frame):
+    def __init__(self, parent, controller):
+        tk.Frame.__init__(self, parent)
+        self.controller = controller
+
+        # Posiziona la grafica al centro dell'applicazione
+        self.pack(expand=True)
+
+        self.login_frame = ttk.Frame(self)
+        self.login_frame.pack(expand=True)
+
+        # Aggiungi la scritta
+        self.instructions_label = ttk.Label(self.login_frame, text="Inserisci l'username e la password per accedere all'app:")
+        self.instructions_label.pack(pady=10)
+
+        self.username_label = ttk.Label(self.login_frame, text="Username")
+        self.username_label.pack(side="top", padx=10, pady=10)
+        self.username_entry = ttk.Entry(self.login_frame)
+        self.username_entry.pack(side="top", padx=10, pady=10)
+
+        self.password_label = ttk.Label(self.login_frame, text="Password")
+        self.password_label.pack(side="top", padx=10, pady=10)
+        self.password_entry = ttk.Entry(self.login_frame, show="*")
+        self.password_entry.pack(side="top", padx=10, pady=10)
+
+        self.login_button = ttk.Button(self.login_frame, text="Login", command=self.login)
+        self.login_button.pack(side="top", padx=10, pady=10)
+
+        # Aggiungi l'opzione di premere il tasto Invio per confermare la login
+        self.username_entry.bind("<Return>", lambda event: self.password_entry.focus())
+        self.password_entry.bind("<Return>", lambda event: self.login())
+
+    def login(self):
+        username = self.username_entry.get()
+        password = self.password_entry.get()
+
+        # Controlla le credenziali dell'utente
+        if username == "admin" and password == "password":
+            self.controller.show_frame(HomePage)
+        else:
+            tk.messagebox.showerror("Errore", "Username o password non corretti")
+
 
 
 class HomePage(tk.Frame):
@@ -78,9 +122,8 @@ class HomePage(tk.Frame):
         self.controller = controller
         label = ttk.Label(self, text='Home Page', font=('TkDefaultFont', 20))
         label.grid(row=0, column=0, columnspan=3, pady=20)
-        description_label = tk.Label(self, text='Benvenuto nell\'applicazione di prova.\n'
-                                                'Questa è la Home Page, da qui puoi accedere alle diverse funzionalità.\n'
-                                                'Scegli una delle opzioni dal menu per iniziare!',
+        description_label = tk.Label(self, text='Benvenuto nell\'applicazione.\n'
+                                                'Questa è la Home Page, da qui puoi accedere alle diverse funzionalità.',
                                       font=('TkDefaultFont', 26), justify='center')
         description_label.grid(row=1, column=0, columnspan=3, pady=20)
         bilancio_icon = Image.open("bilancio_icon.png")
@@ -148,7 +191,7 @@ class Bilancio(tk.Frame):
     def setup_header(self):
         label = ttk.Label(self.header_frame, text='Bilancio', font=('DefaultFont', 20))
         label.pack(side=tk.LEFT, padx=10, pady=10)
-        button = ttk.Button(self.header_frame, text='Go back to Home Page', command=lambda: self.controller.show_frame(HomePage))
+        button = ttk.Button(self.header_frame, text='Torna alla Homepage', command=lambda: self.controller.show_frame(HomePage))
         button.pack(side=tk.RIGHT, padx=10, pady=10)
     
     def setup_indicator(self):
@@ -296,7 +339,7 @@ class Clienti(tk.Frame):
         button1 = ttk.Button(self, text='Aggiorna dati', command=self.update_data)
         button1.pack(padx=10, pady=10)
 
-        button2 = ttk.Button(self, text='Go back to Home Page', command=lambda: self.controller.show_frame(HomePage))
+        button2 = ttk.Button(self, text='Torna alla Homepage', command=lambda: self.controller.show_frame(HomePage))
         button2.pack(padx=10, pady=10)
     
     def update_data(self):
@@ -304,7 +347,7 @@ class Clienti(tk.Frame):
             self.tree.delete(i)
         gs = gspread.authorize(creds)
         sheet = gs.open_by_key(SAMPLE_SPREADSHEET_ID_input)
-        sheet2 = sheet.get_worksheet(1)  # 1 indica il secondo foglio (Foglio2), poiché gli indici partono da 0
+        sheet2 = sheet.get_worksheet(1)  # 1 indica il secondo foglio (Foglio2)
         data = sheet2.get_all_values()
         for row in data:
             self.tree.insert('', 'end', values=(row[0], row[1]))
@@ -314,10 +357,12 @@ class Indicatori(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
+
         label = ttk.Label(self, text='Indicatori', font=('TkDefaultFont', 30))
         label.pack(padx=50, pady=50)
         description_label = tk.Label(self, text='Questa pagina mostra alcuni indicatori.', font=('TkDefaultFont', 20))
         description_label.pack(padx=50, pady=10)
+
         indicator_frame = tk.Frame(self)
         indicator_frame.pack(padx=50, pady=50)
         somma_col2 = get_sum_of_column_2()
@@ -328,6 +373,7 @@ class Indicatori(tk.Frame):
         update_button.pack(pady=20)
         back_button = ttk.Button(self, text='Torna alla Homepage', command=lambda: controller.show_frame(HomePage))
         back_button.pack(pady=50)
+
 
     def update_indicators(self):
         somma_col2 = get_sum_of_column_2()
