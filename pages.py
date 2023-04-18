@@ -60,7 +60,7 @@ class MyApp(tk.Frame):
 
         self.frames = {}
 
-        for F in (LoginPage, HomePage, Bilancio, Clienti, Indicatori):
+        for F in (LoginPage, HomePage, Spese, Clienti, Indicatori):
             frame = F(container, self)
             self.frames[F] = frame
             # frame.pack(fill='both', expand=True)  # Commenta questa riga
@@ -214,7 +214,7 @@ class HomePage(tk.Frame):
         bilancio_icon = Image.open("bilancio_icon.png")
         bilancio_icon = bilancio_icon.resize((64, 64), Image.LANCZOS)
         bilancio_icon = ImageTk.PhotoImage(bilancio_icon)
-        button1 = ttk.Button(self, text="Bilancio", image=bilancio_icon, compound=tk.TOP, command=lambda: controller.show_frame(Bilancio))
+        button1 = ttk.Button(self, text="Spese", image=bilancio_icon, compound=tk.TOP, command=lambda: controller.show_frame(Spese))
         button1.image = bilancio_icon  
         button1.grid(row=2, column=0, padx=20, pady=10)
         clienti_icon = Image.open("clienti_icon.png")
@@ -243,7 +243,7 @@ class HomePage(tk.Frame):
         self.rowconfigure(2, weight=3)
         self.rowconfigure(3, weight=1)
 
-class Bilancio(tk.Frame):
+class Spese(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
@@ -274,7 +274,7 @@ class Bilancio(tk.Frame):
         self.text_frame.pack(fill=tk.BOTH, padx=10, pady=10, expand=True)
 
     def setup_header(self):
-        label = ttk.Label(self.header_frame, text='Bilancio', font=('DefaultFont', 20))
+        label = ttk.Label(self.header_frame, text='Spese', font=('DefaultFont', 20))
         label.pack(side=tk.LEFT, padx=10, pady=10)
         button = ttk.Button(self.header_frame, text='Torna alla Homepage', command=lambda: self.controller.show_frame(HomePage))
         button.pack(side=tk.RIGHT, padx=10, pady=10)
