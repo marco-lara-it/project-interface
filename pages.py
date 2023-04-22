@@ -13,6 +13,8 @@ from tkcalendar import DateEntry
 from PIL import Image, ImageTk
 from googleapiclient.errors import HttpError
 import pandas as pd
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 # Costanti e configurazione
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
@@ -438,7 +440,6 @@ class Clienti(tk.Frame):
             self.tree.insert('', 'end', values=(row[0], row[1]))
 
 class Indicatori(tk.Frame):
-
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
@@ -450,31 +451,63 @@ class Indicatori(tk.Frame):
 
         indicator_frame = tk.Frame(self)
         indicator_frame.pack(padx=50, pady=50)
-        somma_col2 = get_sum_of_column_2()
+        somma_col2 = self.get_sum_of_column_2()
         tk.Label(indicator_frame, text='Somma delle spese registrate:', font=('TkDefaultFont', 24)).grid(row=0, column=0, padx=10, pady=10, sticky='w')
         self.somma_col2_label = tk.Label(indicator_frame, text='€ {:.2f}'.format(somma_col2), font=('TkDefaultFont', 24))
         self.somma_col2_label.grid(row=0, column=1, padx=10, pady=10, sticky='e')
-        update_button = ttk.Button(self, text='Aggiorna Indicatori', command=self.update_indicators)
+
+        pie_chart_caption = tk.Label(self, text='Grafico clienti e pezzi', font=('TkDefaultFont', 24))
+        pie_chart_caption.pack(pady=10)
+
+        pie_chart_button = ttk.Button(self, text='Mostra grafico', command=self.show_pie_chart)
+        pie_chart_button.pack(pady=20)
+
+        update_button = ttk.Button(self, text='Aggiorna Indicatore spese', command=self.update_indicators)
         update_button.pack(pady=20)
+
         back_button = ttk.Button(self, text='Torna alla Homepage', command=lambda: controller.show_frame(HomePage))
         back_button.pack(pady=50)
 
 
+    def get_sum_of_column_2(self):
+        credentials_filename = "/Users/marcolara/codice/project-interface/client_secret.json"
+        gc = gspread.oauth(credentials_filename=credentials_filename)
+        worksheet_name = 'Foglio1'
+        sh = gc.open('valuesdoc').worksheet(worksheet_name)
+        col_values = sh.col_values(2)
+        return sum(float(val) for val in col_values if val)
+
     def update_indicators(self):
-        somma_col2 = get_sum_of_column_2()
+        somma_col2 = self.get_sum_of_column_2()
         self.somma_col2_label.config(text='€ {:.2f}'.format(somma_col2))
 
-def get_gspread_client():
+    def show_pie_chart(self):
+        data = self.get_data()
+        grouped_data = self.group_data_by_client(data)
+        labels = list(grouped_data.keys())
+        sizes = list(grouped_data.values())
 
-    credentials_filename = "/Users/marcolara/codice/project-interface/client_secret.json"
-    return gspread.oauth(credentials_filename=credentials_filename)
+        plt.pie(sizes, labels=labels, autopct='%1.1f%%', startangle=90)
+        plt.axis('equal')
+        plt.title('Distribuzione pezzi venduti per cliente')
+        plt.show()
 
-def get_sum_of_column_2():
-    gc = get_gspread_client()
-    worksheet_name = 'Foglio1'
-    sh = gc.open('valuesdoc').worksheet(worksheet_name)
-    col_values = sh.col_values(2)
-    return sum(float(val) for val in col_values if val)
+    def get_data(self):
+        gc = gspread.authorize(creds)
+        sheet = gc.open_by_key(SAMPLE_SPREADSHEET_ID_input)
+        sheet2 = sheet.get_worksheet(1)  # 1 indica il secondo foglio (Foglio2)
+        return sheet2.get_all_values()
+    
+    def group_data_by_client(self, data):
+        grouped_data = {}
+        for row in data:
+            client = row[0]
+            pezzi_venduti = int(row[1])
+            if client in grouped_data:
+                grouped_data[client] += pezzi_venduti
+            else:
+                grouped_data[client] = pezzi_venduti
+        return grouped_data
 
 if __name__ == '__main__':
     root = tk.Tk()
