@@ -12,7 +12,6 @@ from datetime import date
 from tkcalendar import DateEntry
 from PIL import Image, ImageTk
 from googleapiclient.errors import HttpError
-import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
@@ -20,22 +19,37 @@ from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
 SAMPLE_SPREADSHEET_ID_input = '1ssWRMfTWKkjD-JdC2Vp2r6b9NlMsh7omqNq_bRW-kdw'
 SAMPLE_RANGE_NAME = 'A1:AA1000'
-
 creds = None
-if os.path.exists('token.pickle'):
-    with open('token.pickle', 'rb') as token:
-        creds = pickle.load(token)
-if not creds or not creds.valid:
-    if creds and creds.expired and creds.refresh_token:
-        creds.refresh(Request())
-    else:
-        flow = InstalledAppFlow.from_client_secrets_file('client_secret.json', SCOPES)
-        creds = flow.run_local_server(port=0)
-    with open('token.pickle', 'wb') as token:
-        pickle.dump(creds, token)
 
-service = build('sheets', 'v4', credentials=creds)
+class GoogleSheetAuth:
+    SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
+    SAMPLE_SPREADSHEET_ID_input = '1ssWRMfTWKkjD-JdC2Vp2r6b9NlMsh7omqNq_bRW-kdw'
+    SAMPLE_RANGE_NAME = 'A1:AA1000'
+    _instance = None
 
+    @classmethod
+    def get_instance(cls):
+        if cls._instance is None:
+            cls._instance = cls()
+        return cls._instance
+
+    def __init__(self):
+        self.creds = None
+        if os.path.exists('token.pickle'):
+            with open('token.pickle', 'rb') as token:
+                self.creds = pickle.load(token)
+        if not self.creds or not self.creds.valid:
+            if self.creds and self.creds.expired and self.creds.refresh_token:
+                self.creds.refresh(Request())
+            else:
+                flow = InstalledAppFlow.from_client_secrets_file('client_secret.json', self.SCOPES)
+                self.creds = flow.run_local_server(port=0)
+            with open('token.pickle', 'wb') as token:
+                pickle.dump(self.creds, token)
+
+    def get_credentials(self):
+        return gspread.authorize(self.creds)
+    
 class MyApp(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
@@ -65,15 +79,12 @@ class MyApp(tk.Frame):
         for F in (LoginPage, HomePage, Spese, Clienti, Indicatori):
             frame = F(container, self)
             self.frames[F] = frame
-            # frame.pack(fill='both', expand=True)  # Commenta questa riga
 
-        # Nascondi tutti i frame eccetto LoginPage
         for frame in self.frames.values():
             frame.pack_forget()
         self.frames[LoginPage].pack(fill='both', expand=True)
-
-        # Aggiungi questa riga per impacchettare il container
         container.pack(fill='both', expand=True)
+
     def show_frame(self, frame_class):
         frame = self.frames[frame_class]
         for f in self.frames.values():
@@ -85,14 +96,11 @@ class LoginPage(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
-
-        # Posiziona la grafica al centro dell'applicazione
         self.pack(expand=True)
 
         self.login_frame = ttk.Frame(self)
         self.login_frame.pack(expand=True)
 
-        # Aggiungi le istruzioni
         self.instructions_label = ttk.Label(self.login_frame, text="Inserisci l'username e la password per accedere all'app:")
         self.instructions_label.pack(pady=10)
 
@@ -112,8 +120,6 @@ class LoginPage(tk.Frame):
         self.add_credentials_button = ttk.Button(self.login_frame, text="Registrati", command=self.create_credentials)
         self.add_credentials_button.pack(side="top", padx=10, pady=10)
 
-
-        # Aggiungi l'opzione di premere il tasto Invio per confermare la login
         self.username_entry.bind("<Return>", lambda event: self.password_entry.focus())
         self.password_entry.bind("<Return>", lambda event: self.login())
 
@@ -121,17 +127,17 @@ class LoginPage(tk.Frame):
         username = self.username_entry.get()
         password = self.password_entry.get()
 
-        # Verifica le credenziali dell'utente nel foglio di Google Sheets
         try:
-            sheet = service.spreadsheets().values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID_input, range="Foglio3!A:B").execute()
-            values = sheet.get('values', [])
+            gc = GoogleSheetAuth.get_instance().get_credentials()
+            sheet = gc.open_by_key(GoogleSheetAuth.SAMPLE_SPREADSHEET_ID_input)
+            worksheet = sheet.worksheet("Foglio3")
+            values = worksheet.get_all_values()
 
             for row in values:
                 if len(row) >= 2 and row[0] == username and row[1] == password:
                     self.controller.show_frame(HomePage)
                     return
-
-            # Se le credenziali non sono corrette, mostra un messaggio di errore
+                
             tk.messagebox.showerror("Errore", "Username o password non corretti")
 
         except HttpError as error:
@@ -139,7 +145,7 @@ class LoginPage(tk.Frame):
             tk.messagebox.showerror("Errore", "Impossibile accedere al foglio di Google Sheets")
 
     def create_credentials(self):
-        # Crea una finestra di dialogo per l'inserimento di un nuovo username e una nuova password
+
         new_credentials_window = tk.Toplevel(self.master)
         new_credentials_window.title("Crea nuove credenziali")
 
@@ -164,7 +170,6 @@ class LoginPage(tk.Frame):
         add_credentials_button = ttk.Button(new_credentials_frame, text="Aggiungi", command=lambda: self.add_credentials(new_credentials_window))
         add_credentials_button.pack(side="top", padx=10, pady=10)
 
-    
     def add_credentials(self, new_credentials_window):
         new_username = self.new_username_entry.get()
         new_password = self.new_password_entry.get()
@@ -173,35 +178,26 @@ class LoginPage(tk.Frame):
         if new_password != new_password_confirm:
             tk.messagebox.showerror("Errore", "Le due password non corrispondono")
             return
-        
-        try:
-            # Ottieni i dati attuali dal foglio di Google Sheets
-            sheet = service.spreadsheets().values().get(spreadsheetId=SAMPLE_SPREADSHEET_ID_input, range="Foglio3!A:B").execute()
-            values = sheet.get('values', [])
 
-            # Controlla se l'username esiste già
+        try:
+            gc = GoogleSheetAuth.get_instance().get_credentials()
+            sheet = gc.open_by_key(GoogleSheetAuth.SAMPLE_SPREADSHEET_ID_input)
+            worksheet = sheet.worksheet("Foglio3")
+            values = worksheet.get_all_values()
+
             for row in values:
                 if row[0] == new_username:
                     tk.messagebox.showerror("Errore", "Username già esistente")
                     return
 
-            # Aggiungi le nuove credenziali alla fine del foglio di Google Sheets
-            values.append([new_username, new_password])
+            new_range = f"A{len(values) + 1}:B{len(values) + 1}"
+            result = worksheet.update(new_range, [[new_username, new_password]], value_input_option="USER_ENTERED")
 
-            # Aggiorna i dati sul foglio di Google Sheets
-            result = service.spreadsheets().values().update(
-                spreadsheetId=SAMPLE_SPREADSHEET_ID_input, range="Foglio3!A:B",
-                valueInputOption="USER_ENTERED", body={"values": values}).execute()
-
-            # Chiudi la finestra di dialogo
             new_credentials_window.destroy()
 
         except HttpError as error:
             print(f"Si è verificato un errore: {error}")
             tk.messagebox.showerror("Errore", "Impossibile aggiungere nuove credenziali al foglio di Google Sheets")
-
-
-
 
 class HomePage(tk.Frame):
     def __init__(self, parent, controller):
@@ -290,11 +286,12 @@ class Spese(tk.Frame):
         self.update_somma_importi()
 
     def update_somma_importi(self):
-        gs = gspread.authorize(creds)
-        sheet = gs.open_by_key(SAMPLE_SPREADSHEET_ID_input).sheet1
+        gc = GoogleSheetAuth.get_instance().get_credentials()
+        sheet = gc.open_by_key(GoogleSheetAuth.SAMPLE_SPREADSHEET_ID_input).sheet1
         data = sheet.get_all_values()
         somma_importi = sum(float(row[1]) for row in data if row[1])
         self.somma_importi_label.config(text='€ {:.2f}'.format(somma_importi))
+
         
     def setup_causale(self):
         font = ('TkDefaultFont', 16)
@@ -356,29 +353,33 @@ class Spese(tk.Frame):
         tk.Button(self, text='Aggiorna dati', font=font, command=self.update_data, width=15, bg='white').pack(fill=tk.X, padx=10, pady=10)
 
     def update_data(self):
-            gs = gspread.authorize(creds)
-            sheet = gs.open_by_key(SAMPLE_SPREADSHEET_ID_input).sheet1
-            data = sheet.get_all_values()
-            for i in self.tree.get_children():
-                self.tree.delete(i)
-            for row in data:
-                self.tree.insert('', 'end', values=row)
+        gc = GoogleSheetAuth.get_instance().get_credentials()
+        sheet = gc.open_by_key(GoogleSheetAuth.SAMPLE_SPREADSHEET_ID_input).sheet1
+        data = sheet.get_all_values()
+        for i in self.tree.get_children():
+            self.tree.delete(i)
+        for row in data:
+            self.tree.insert('', 'end', values=row)
 
-            self.update_somma_importi()
+        self.update_somma_importi()
+
 
     def salva_dati(self):
         causale = self.causale_var.get().strip()
         importo = self.input2.get().strip()
         data_selezionata = self.input3.get_date()
         data_string = data_selezionata.strftime('%Y-%m-%d')
-        
+
         if causale and importo and data_string:
             data_to_write = [[causale, importo, data_string]]
             body = {'values': data_to_write}
-            result = service.spreadsheets().values().append(spreadsheetId=SAMPLE_SPREADSHEET_ID_input, range='A:C',
-                                                            valueInputOption='RAW', body=body).execute()
-            num_celle_aggiunte = result.get("updates").get("updatedCells")
-            if num_celle_aggiunte > 0:
+
+            gc = GoogleSheetAuth.get_instance().get_credentials()
+            sheet = gc.open_by_key(GoogleSheetAuth.SAMPLE_SPREADSHEET_ID_input).sheet1
+
+            result = sheet.append_rows(data_to_write, value_input_option='RAW')
+
+            if len(data_to_write) > 0:
                 self.input1.delete(0, tk.END)
                 self.input2.delete(0, tk.END)
                 self.input3.delete(0, tk.END)
@@ -408,7 +409,7 @@ class Clienti(tk.Frame):
 
     def setup_treeview(self):
         columns = ('Cliente', 'Pezzi venduti')
-        
+
         tree_frame = ttk.Frame(self)  # Create a frame to contain the treeview and scrollbar
         tree_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
@@ -428,14 +429,16 @@ class Clienti(tk.Frame):
 
         button2 = ttk.Button(self, text='Torna alla Homepage', command=lambda: self.controller.show_frame(HomePage))
         button2.pack(padx=10, pady=10)
-    
+
     def update_data(self):
         for i in self.tree.get_children():
             self.tree.delete(i)
-        gs = gspread.authorize(creds)
-        sheet = gs.open_by_key(SAMPLE_SPREADSHEET_ID_input)
+        
+        gc = GoogleSheetAuth.get_instance().get_credentials()  # Utilizza la classe GoogleSheetAuth per ottenere le credenziali
+        sheet = gc.open_by_key(SAMPLE_SPREADSHEET_ID_input)
         sheet2 = sheet.get_worksheet(1)  # 1 indica il secondo foglio (Foglio2)
         data = sheet2.get_all_values()
+        
         for row in data:
             self.tree.insert('', 'end', values=(row[0], row[1]))
 
@@ -443,6 +446,10 @@ class Indicatori(tk.Frame):
     def __init__(self, parent, controller):
         tk.Frame.__init__(self, parent)
         self.controller = controller
+        self.expenses_data = []
+        self.update_expenses_data()
+        self.clients_data = []
+        self.update_clients_data()
 
         label = ttk.Label(self, text='Indicatori', font=('TkDefaultFont', 30))
         label.pack(padx=50, pady=50)
@@ -452,38 +459,46 @@ class Indicatori(tk.Frame):
         indicator_frame = tk.Frame(self)
         indicator_frame.pack(padx=50, pady=50)
         somma_col2 = self.get_sum_of_column_2()
-        tk.Label(indicator_frame, text='Somma delle spese registrate:', font=('TkDefaultFont', 24)).grid(row=0, column=0, padx=10, pady=10, sticky='w')
+        tk.Label(indicator_frame, text='1) Somma delle spese registrate:', font=('TkDefaultFont', 24)).grid(row=0, column=0, padx=10, pady=10, sticky='w')
         self.somma_col2_label = tk.Label(indicator_frame, text='€ {:.2f}'.format(somma_col2), font=('TkDefaultFont', 24))
         self.somma_col2_label.grid(row=0, column=1, padx=10, pady=10, sticky='e')
-
-        pie_chart_caption = tk.Label(self, text='Grafico clienti e pezzi', font=('TkDefaultFont', 24))
+        
+        pie_chart_caption = tk.Label(self, text='2) Grafico clienti e pezzi', font=('TkDefaultFont', 24))
         pie_chart_caption.pack(pady=10)
 
         pie_chart_button = ttk.Button(self, text='Mostra grafico', command=self.show_pie_chart)
         pie_chart_button.pack(pady=20)
 
-        update_button = ttk.Button(self, text='Aggiorna Indicatore spese', command=self.update_indicators)
+        update_button = ttk.Button(self, text='Aggiorna Indicatori', command=self.update_indicators)
         update_button.pack(pady=20)
 
         back_button = ttk.Button(self, text='Torna alla Homepage', command=lambda: controller.show_frame(HomePage))
         back_button.pack(pady=50)
 
+    def update_expenses_data(self):
+        gc = GoogleSheetAuth.get_instance().get_credentials()
+        sheet = gc.open_by_key(SAMPLE_SPREADSHEET_ID_input)
+        sheet1 = sheet.get_worksheet(0)
+        self.expenses_data = sheet1.get_all_values()
 
     def get_sum_of_column_2(self):
-        credentials_filename = "/Users/marcolara/codice/project-interface/client_secret.json"
-        gc = gspread.oauth(credentials_filename=credentials_filename)
-        worksheet_name = 'Foglio1'
-        sh = gc.open('valuesdoc').worksheet(worksheet_name)
-        col_values = sh.col_values(2)
+        col_values = [row[1] for row in self.expenses_data]
         return sum(float(val) for val in col_values if val)
+    
+    def update_clients_data(self):
+        gc = GoogleSheetAuth.get_instance().get_credentials()
+        sheet = gc.open_by_key(SAMPLE_SPREADSHEET_ID_input)
+        sheet2 = sheet.get_worksheet(1)  # 1 indica il secondo foglio (Foglio2)
+        self.clients_data = sheet2.get_all_values()
 
     def update_indicators(self):
+        self.update_expenses_data()
         somma_col2 = self.get_sum_of_column_2()
         self.somma_col2_label.config(text='€ {:.2f}'.format(somma_col2))
 
     def show_pie_chart(self):
-        data = self.get_data()
-        grouped_data = self.group_data_by_client(data)
+        self.update_clients_data()
+        grouped_data = self.group_data_by_client()
         labels = list(grouped_data.keys())
         sizes = list(grouped_data.values())
 
@@ -491,16 +506,16 @@ class Indicatori(tk.Frame):
         plt.axis('equal')
         plt.title('Distribuzione pezzi venduti per cliente')
         plt.show()
-
+    
     def get_data(self):
         gc = gspread.authorize(creds)
         sheet = gc.open_by_key(SAMPLE_SPREADSHEET_ID_input)
         sheet2 = sheet.get_worksheet(1)  # 1 indica il secondo foglio (Foglio2)
         return sheet2.get_all_values()
     
-    def group_data_by_client(self, data):
+    def group_data_by_client(self):
         grouped_data = {}
-        for row in data:
+        for row in self.clients_data:
             client = row[0]
             pezzi_venduti = int(row[1])
             if client in grouped_data:
