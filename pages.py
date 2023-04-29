@@ -114,6 +114,10 @@ class LoginPage(tk.Frame):
         self.password_entry = ttk.Entry(self.login_frame, show="*")
         self.password_entry.pack(side="top", padx=10, pady=10)
 
+        self.show_password_var = tk.BooleanVar()
+        self.show_password_checkbutton = ttk.Checkbutton(self.login_frame, text="Mostra password", variable=self.show_password_var, command=self.mostra_password)
+        self.show_password_checkbutton.pack(side="top", padx=10, pady=10)
+
         self.login_button = ttk.Button(self.login_frame, text="Login", command=self.login)
         self.login_button.pack(side="top", padx=10, pady=10)
 
@@ -167,6 +171,10 @@ class LoginPage(tk.Frame):
         self.new_password_confirm_entry = ttk.Entry(new_credentials_frame, show="*")
         self.new_password_confirm_entry.pack(side="top", padx=10, pady=10)
 
+        self.show_new_password_var = tk.BooleanVar()
+        self.show_new_password_checkbutton = ttk.Checkbutton(new_credentials_frame, text="Mostra password", variable=self.show_new_password_var, command=self.mostra_password_creazione)
+        self.show_new_password_checkbutton.pack(side="top", padx=10, pady=10)
+
         add_credentials_button = ttk.Button(new_credentials_frame, text="Aggiungi", command=lambda: self.add_credentials(new_credentials_window))
         add_credentials_button.pack(side="top", padx=10, pady=10)
 
@@ -198,6 +206,24 @@ class LoginPage(tk.Frame):
         except HttpError as error:
             print(f"Si è verificato un errore: {error}")
             tk.messagebox.showerror("Errore", "Impossibile aggiungere nuove credenziali al foglio di Google Sheets")
+            
+    def mostra_password(self):
+        if self.show_password_var.get():
+            self.password_entry.config(show="")
+            self.new_password_entry.config(show="")
+            self.new_password_confirm_entry.config(show="")
+        else:
+            self.password_entry.config(show="*")
+            self.new_password_entry.config(show="*")
+            self.new_password_confirm_entry.config(show="*")
+
+    def mostra_password_creazione(self):
+        if self.show_new_password_var.get():
+            self.new_password_entry.config(show="")
+            self.new_password_confirm_entry.config(show="")
+        else:
+            self.new_password_entry.config(show="*")
+            self.new_password_confirm_entry.config(show="*")
 
 class HomePage(tk.Frame):
     def __init__(self, parent, controller):
