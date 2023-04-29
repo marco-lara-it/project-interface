@@ -115,7 +115,7 @@ class LoginPage(tk.Frame):
         self.password_entry.pack(side="top", padx=10, pady=10)
 
         self.show_password_var = tk.BooleanVar()
-        self.show_password_checkbutton = ttk.Checkbutton(self.login_frame, text="Mostra password", variable=self.show_password_var, command=self.mostra_password)
+        self.show_password_checkbutton = ttk.Checkbutton(self.login_frame, text="Mostra password", variable=self.show_password_var, command=self.mostra_password_login)
         self.show_password_checkbutton.pack(side="top", padx=10, pady=10)
 
         self.login_button = ttk.Button(self.login_frame, text="Login", command=self.login)
@@ -207,15 +207,11 @@ class LoginPage(tk.Frame):
             print(f"Si è verificato un errore: {error}")
             tk.messagebox.showerror("Errore", "Impossibile aggiungere nuove credenziali al foglio di Google Sheets")
             
-    def mostra_password(self):
+    def mostra_password_login(self):
         if self.show_password_var.get():
             self.password_entry.config(show="")
-            self.new_password_entry.config(show="")
-            self.new_password_confirm_entry.config(show="")
         else:
             self.password_entry.config(show="*")
-            self.new_password_entry.config(show="*")
-            self.new_password_confirm_entry.config(show="*")
 
     def mostra_password_creazione(self):
         if self.show_new_password_var.get():
