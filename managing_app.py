@@ -424,7 +424,7 @@ class Clienti(tk.Frame):
         label.pack(padx=10, pady=10)
 
     def setup_treeview(self):
-        columns = ('Cliente', 'Pezzi venduti', 'Data vendita', 'Data uscita')
+        columns = ('Cliente', 'Pezzi venduti', 'Data ordine', 'Data spedizione')
 
         tree_frame = ttk.Frame(self)  # Create a frame to contain the treeview and scrollbar
         tree_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
@@ -432,9 +432,9 @@ class Clienti(tk.Frame):
         self.tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=20)  # Set the height of the treeview
         for col in columns:
             self.tree.heading(col, text=col)
-            if col == "Data uscita":
+            if col == "Data spedizione":
                 self.tree.column(col, stretch=True, width=100)
-            elif col != "Data vendita":
+            elif col != "Data ordine":
                 self.tree.column(col, stretch=True, width=200)
             else:
                 self.tree.column(col, stretch=True, width=100)
@@ -495,14 +495,21 @@ class Indicatori(tk.Frame):
         pie_chart_button = ttk.Button(self, text='Mostra grafico', command=self.show_pie_chart)
         pie_chart_button.pack(pady=20)
 
-        turnover_frame = tk.Frame(self)
-        turnover_frame.pack(pady=10)
+        giacenza_frame = tk.Frame(self)
+        giacenza_frame.pack(pady=10)
         self.avarage_days = 0
         self.update_clients_data()
         grouped_data, self.avarage_days = self.day_indicator()
-        tk.Label(turnover_frame, text='3) Tempo medio di giacenza del magazzino:', font=('TkDefaultFont', 24)).pack(side=tk.LEFT)
-        self.avarage_days_label = tk.Label(turnover_frame, text='{:.2f} giorni'.format(self.avarage_days), font=('TkDefaultFont', 24))
-        self.avarage_days_label.pack(side=tk.LEFT)
+        tk.Label(giacenza_frame, text='3) Tempo medio di giacenza del magazzino:', font=('TkDefaultFont', 24)).pack(side=tk.LEFT)
+        self.giacenza_label = tk.Label(giacenza_frame, text='{:.2f} giorni'.format(self.avarage_days), font=('TkDefaultFont', 24))
+        self.giacenza_label.pack(side=tk.LEFT)
+
+        media_pezzi_venduti_frame = tk.Frame(self)
+        media_pezzi_venduti_frame.pack(pady=10)
+        media_pezzi_venduti = self.media_pezzi_venduti()
+        tk.Label(media_pezzi_venduti_frame, text="4) Media dei pezzi venduti:", font=("TkDefaultFont", 24)).pack(side=tk.LEFT)
+        self.media_pezzi_venduti_label = tk.Label(media_pezzi_venduti_frame, text="{:.2f}".format(media_pezzi_venduti), font=("TkDefaultFont", 24))
+        self.media_pezzi_venduti_label.pack(side=tk.LEFT)
 
         update_button = ttk.Button(self, text='Aggiorna Indicatori', command=self.update_indicators)
         update_button.pack(pady=20)
@@ -533,7 +540,9 @@ class Indicatori(tk.Frame):
         somma_col2 = self.get_sum_of_column_2()
         self.somma_col2_label.config(text='€ {:.2f}'.format(somma_col2))
         grouped_data, self.avarage_days = self.day_indicator()
-        self.avarage_days_label.config(text='{:.2f} giorni'.format(self.avarage_days))
+        self.giacenza_label.config(text='{:.2f} giorni'.format(self.avarage_days))
+        media_pezzi_venduti = self.media_pezzi_venduti()
+        self.media_pezzi_venduti_label.config(text="{:.2f}".format(media_pezzi_venduti))
 
     def show_pie_chart(self):
         self.update_clients_data()
@@ -556,10 +565,22 @@ class Indicatori(tk.Frame):
     def day_indicator(self):
         grouped_data = {}
         total_days = 0
-        total_orders = 0
+        totale_ordini = 0
+        
         for row in self.clients_data:
             client = row[0]
             pezzi_venduti = int(row[1])
+            if row[2].strip() == "" or row[3].strip() == "":
+                continue
+            try:
+                entry_date = datetime.datetime.strptime(row[2], "%d/%m/%Y")
+            except ValueError:
+                continue
+
+            try:
+                exit_date = datetime.datetime.strptime(row[3], "%d/%m/%Y")
+            except ValueError:
+                continue
             entry_date = datetime.datetime.strptime(row[2], "%d/%m/%Y")
             exit_date = datetime.datetime.strptime(row[3], "%d/%m/%Y")
             days_difference = (exit_date - entry_date).days
@@ -567,13 +588,24 @@ class Indicatori(tk.Frame):
                 days_difference = 0
                 
             total_days += days_difference
-            total_orders += 1
+            totale_ordini += 1
             if client in grouped_data:
                 grouped_data[client] += pezzi_venduti
             else:
                 grouped_data[client] = pezzi_venduti
-        average_days = total_days / total_orders
+        average_days = total_days / totale_ordini
         return grouped_data, average_days
+    
+    def media_pezzi_venduti(self):
+        totale_pezzi_venduti = 0
+        totale_ordini = 0
+        
+        for row in self.clients_data:
+            pezzi_venduti = int(row[1])
+            totale_pezzi_venduti += pezzi_venduti
+            totale_ordini += 1
+        media_pezzi_venduti = totale_pezzi_venduti / totale_ordini
+        return media_pezzi_venduti
 
 if __name__ == '__main__':
     root = tk.Tk()
