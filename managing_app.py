@@ -8,13 +8,16 @@ from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow, Flow
 from google.auth.transport.requests import Request
 from tkcalendar import DateEntry
-from datetime import date
-import datetime
+from datetime import datetime,date
 from tkcalendar import DateEntry
 from PIL import Image, ImageTk
 from googleapiclient.errors import HttpError
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import statistics
+from scipy.stats import norm
+import math
+import numpy as np
 
 # Costanti e configurazione
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
@@ -263,7 +266,7 @@ class Spese(tk.Frame):
         self.controller = controller
 
         self.setup_frames()
-        self.setup_header()
+        self.setup_header() 
         self.setup_causale()
         self.setup_importo()
         self.setup_data()
@@ -476,46 +479,56 @@ class Indicatori(tk.Frame):
         self.clients_data = []
         self.update_clients_data()
 
-        label = ttk.Label(self, text='Indicatori', font=('TkDefaultFont', 30))
-        label.pack(pady=50)
+        main_frame = tk.Frame(self)
+        main_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        description_label = tk.Label(self, text='Questa pagina mostra alcuni indicatori.', font=('TkDefaultFont', 20))
-        description_label.pack(pady=10)
+        label = ttk.Label(main_frame, text='Indicatori', font=('TkDefaultFont', 30))
+        label.grid(row=0, column=0, pady=50, padx=20, columnspan=2)
 
-        sum_frame = tk.Frame(self)
-        sum_frame.pack(pady=10)
+        description_label = ttk.Label(main_frame, text='Questa pagina mostra alcuni indicatori.', font=('TkDefaultFont', 20))
+        description_label.grid(row=1, column=0, pady=10, padx=20, columnspan=2)
+
+        sum_frame = tk.Frame(main_frame)
+        sum_frame.grid(row=2, column=0, pady=10, padx=20, columnspan=2)
         somma_col2 = self.get_sum_of_column_2()
-        tk.Label(sum_frame, text='1) Somma delle spese registrate:', font=('TkDefaultFont', 24)).pack(side=tk.LEFT)
+        tk.Label(sum_frame, text='1) Somma delle spese registrate:', font=('TkDefaultFont', 24)).grid(row=0, column=0, padx=10)
         self.somma_col2_label = tk.Label(sum_frame, text='€ {:.2f}'.format(somma_col2), font=('TkDefaultFont', 24))
-        self.somma_col2_label.pack(side=tk.LEFT)
+        self.somma_col2_label.grid(row=0, column=1, padx=10)
 
-        pie_chart_caption = tk.Label(self, text='2) Grafico clienti e pezzi', font=('TkDefaultFont', 24))
-        pie_chart_caption.pack(pady=10)
+        pie_chart_caption = tk.Label(main_frame, text='2) Grafico clienti e pezzi', font=('TkDefaultFont', 24))
+        pie_chart_caption.grid(row=3, column=0, pady=10, padx=20)
 
-        pie_chart_button = ttk.Button(self, text='Mostra grafico', command=self.show_pie_chart)
-        pie_chart_button.pack(pady=20)
+        pie_chart_button = ttk.Button(main_frame, text='Mostra grafico', command=self.show_pie_chart)
+        pie_chart_button.grid(row=3, column=1, pady=20, padx=20)
 
-        giacenza_frame = tk.Frame(self)
-        giacenza_frame.pack(pady=10)
+        giacenza_frame = tk.Frame(main_frame)
+        giacenza_frame.grid(row=4, column=0, pady=10, padx=20, columnspan=2)
         self.avarage_days = 0
         self.update_clients_data()
         grouped_data, self.avarage_days = self.day_indicator()
-        tk.Label(giacenza_frame, text='3) Tempo medio di giacenza del magazzino:', font=('TkDefaultFont', 24)).pack(side=tk.LEFT)
+        tk.Label(giacenza_frame, text='3) Tempo medio di invio ordine:', font=('TkDefaultFont', 24)).grid(row=0, column=0, padx=10)
         self.giacenza_label = tk.Label(giacenza_frame, text='{:.2f} giorni'.format(self.avarage_days), font=('TkDefaultFont', 24))
-        self.giacenza_label.pack(side=tk.LEFT)
+        self.giacenza_label.grid(row=0, column=1, padx=10)
 
-        media_pezzi_venduti_frame = tk.Frame(self)
-        media_pezzi_venduti_frame.pack(pady=10)
+        bar_chart_caption = tk.Label(main_frame, text="4) Tempo medio ricezione spedizione", font=("TkDefaultFont", 24))
+        bar_chart_caption.grid(row=5, column=0, pady=10, padx=20)
+
+        bar_chart_button = ttk.Button(main_frame, text="Mostra grafico", command=self.show_bar_chart)
+        bar_chart_button.grid(row=5, column=1, pady=20, padx=20)
+
+        media_pezzi_venduti_frame = tk.Frame(main_frame)
+        media_pezzi_venduti_frame.grid(row=6, column=0, pady=10, padx=20, columnspan=2)
         media_pezzi_venduti = self.media_pezzi_venduti()
-        tk.Label(media_pezzi_venduti_frame, text="4) Media dei pezzi venduti:", font=("TkDefaultFont", 24)).pack(side=tk.LEFT)
+        tk.Label(media_pezzi_venduti_frame, text="5) Media pezzi venduti per ordine:", font=("TkDefaultFont", 24)).grid(row=0, column=0, padx=10)
         self.media_pezzi_venduti_label = tk.Label(media_pezzi_venduti_frame, text="{:.2f}".format(media_pezzi_venduti), font=("TkDefaultFont", 24))
-        self.media_pezzi_venduti_label.pack(side=tk.LEFT)
+        self.media_pezzi_venduti_label.grid(row=0, column=1, padx=10)
 
-        update_button = ttk.Button(self, text='Aggiorna Indicatori', command=self.update_indicators)
-        update_button.pack(pady=20)
+        update_button = ttk.Button(main_frame, text='Aggiorna Indicatori', command=self.update_indicators)
+        update_button.grid(row=7, column=0, pady=20, padx=20)
 
-        back_button = ttk.Button(self, text='Torna alla Homepage', command=lambda: controller.show_frame(HomePage))
-        back_button.pack(pady=50)
+        back_button = ttk.Button(main_frame, text='Torna alla Homepage', command=lambda: controller.show_frame(HomePage))
+        back_button.grid(row=7, column=1, pady=50, padx=20)
+
 
 
     def update_expenses_data(self):
@@ -573,16 +586,16 @@ class Indicatori(tk.Frame):
             if row[2].strip() == "" or row[3].strip() == "":
                 continue
             try:
-                entry_date = datetime.datetime.strptime(row[2], "%d/%m/%Y")
+                entry_date = datetime.strptime(row[2], "%d/%m/%Y")
             except ValueError:
                 continue
 
             try:
-                exit_date = datetime.datetime.strptime(row[3], "%d/%m/%Y")
+                exit_date = datetime.strptime(row[3], "%d/%m/%Y")
             except ValueError:
                 continue
-            entry_date = datetime.datetime.strptime(row[2], "%d/%m/%Y")
-            exit_date = datetime.datetime.strptime(row[3], "%d/%m/%Y")
+            entry_date = datetime.strptime(row[2], "%d/%m/%Y")
+            exit_date = datetime.strptime(row[3], "%d/%m/%Y")
             days_difference = (exit_date - entry_date).days
             if days_difference < 0:
                 days_difference = 0
@@ -595,18 +608,57 @@ class Indicatori(tk.Frame):
                 grouped_data[client] = pezzi_venduti
         average_days = total_days / totale_ordini
         return grouped_data, average_days
-    
+        
     def media_pezzi_venduti(self):
         totale_pezzi_venduti = 0
         totale_ordini = 0
         
         for row in self.clients_data:
-            pezzi_venduti = int(row[1])
-            totale_pezzi_venduti += pezzi_venduti
+            pezzi = int(row[1])
+            totale_pezzi_venduti += pezzi
             totale_ordini += 1
         media_pezzi_venduti = totale_pezzi_venduti / totale_ordini
         return media_pezzi_venduti
+    
+    def show_bar_chart(self):
+        self.update_clients_data()
+        months, average_delivery_times = self.calculate_monthly_average_delivery_times()
 
+        y_pos = np.arange(len(months))
+        plt.bar(y_pos, average_delivery_times, align='center', alpha=0.5)
+        plt.xticks(y_pos, months, rotation='vertical')
+        plt.ylabel('Tempo medio (giorni)')
+        plt.title('Tempo medio tra ricezione dell\'ordine e spedizione per mese')
+        plt.tight_layout()
+        plt.show()
+
+    def calculate_monthly_average_delivery_times(self):
+        monthly_data = {}
+        for row in self.clients_data:
+            if row[2].strip() == "" or row[3].strip() == "":
+                continue
+            try:
+                entry_date = datetime.strptime(row[2], "%d/%m/%Y")
+                exit_date = datetime.strptime(row[3], "%d/%m/%Y")
+            except ValueError:
+                continue
+
+            days_difference = (exit_date - entry_date).days
+            if days_difference < 0:
+                days_difference = 0
+
+            month = entry_date.strftime("%Y-%m")
+            if month in monthly_data:
+                monthly_data[month]["total_days"] += days_difference
+                monthly_data[month]["total_orders"] += 1
+            else:
+                monthly_data[month] = {"total_days": days_difference, "total_orders": 1}
+
+        months = sorted(monthly_data.keys())
+        average_delivery_times = [monthly_data[month]["total_days"] / monthly_data[month]["total_orders"] for month in months]
+
+        return months, average_delivery_times
+        
 if __name__ == '__main__':
     root = tk.Tk()
     ex = MyApp(root)
