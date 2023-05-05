@@ -175,6 +175,12 @@ class LoginPage(tk.Frame):
         self.new_password_confirm_entry = ttk.Entry(new_credentials_frame, show="*")
         self.new_password_confirm_entry.pack(side="top", padx=10, pady=10)
 
+        self.role_label = ttk.Label(new_credentials_frame, text="Ruolo:")
+        self.role_label.pack(side="top", padx=10, pady=10)
+        self.role_combobox = ttk.Combobox(new_credentials_frame, values=[ "vendite", "contabile","manager"], state="readonly")
+        self.role_combobox.current(0)  # Imposta il valore predefinito su 'vendite'
+        self.role_combobox.pack(side="top", padx=10, pady=10)
+
         self.show_new_password_var = tk.BooleanVar()
         self.show_new_password_checkbutton = ttk.Checkbutton(new_credentials_frame, text="Mostra password", variable=self.show_new_password_var, command=lambda: self.mostra_password(self.new_password_entry, self.new_password_confirm_entry))
         self.show_new_password_checkbutton.pack(side="top", padx=10, pady=10)
@@ -186,7 +192,8 @@ class LoginPage(tk.Frame):
         new_username = self.new_username_entry.get()
         new_password = self.new_password_entry.get()
         new_password_confirm = self.new_password_confirm_entry.get()
-
+        new_role = self.role_combobox.get()
+        
         if new_password != new_password_confirm:
             tk.messagebox.showerror("Errore", "Le due password non corrispondono")
             return
@@ -202,8 +209,8 @@ class LoginPage(tk.Frame):
                     tk.messagebox.showerror("Errore", "Username già esistente")
                     return
 
-            new_range = f"A{len(values) + 1}:B{len(values) + 1}"
-            result = worksheet.update(new_range, [[new_username, new_password]], value_input_option="USER_ENTERED")
+            new_range = f"A{len(values) + 1}:C{len(values) + 1}"
+            result = worksheet.update(new_range, [[new_username, new_password, new_role]], value_input_option="USER_ENTERED")
 
             new_credentials_window.destroy()
 
@@ -231,25 +238,25 @@ class HomePage(tk.Frame):
         bilancio_icon = Image.open("bilancio_icon.png")
         bilancio_icon = bilancio_icon.resize((64, 64), Image.LANCZOS)
         bilancio_icon = ImageTk.PhotoImage(bilancio_icon)
-        button1 = ttk.Button(self, text="Spese", image=bilancio_icon, compound=tk.TOP, command=lambda: controller.show_frame(Spese))
+        button1 = ttk.Button(self, text="Spese", image=bilancio_icon, compound=tk.TOP, command=lambda: self.check_permission(Spese, "contabile"))
         button1.image = bilancio_icon  
         button1.grid(row=2, column=0, padx=20, pady=10)
         clienti_icon = Image.open("clienti_icon.png")
         clienti_icon = clienti_icon.resize((64, 64), Image.LANCZOS)
         clienti_icon = ImageTk.PhotoImage(clienti_icon)
-        button2 = ttk.Button(self, text="Clienti", image=clienti_icon, compound=tk.TOP, command=lambda: controller.show_frame(Clienti))
+        button2 = ttk.Button(self, text="Clienti", image=clienti_icon, compound=tk.TOP, command=lambda: self.check_permission(Clienti, "vendite"))
         button2.image = clienti_icon  
         button2.grid(row=2, column=1, padx=20, pady=10)
         indicatori_icon = Image.open("indicatori_icon.png")
         indicatori_icon = indicatori_icon.resize((64, 64), Image.LANCZOS)
         indicatori_icon = ImageTk.PhotoImage(indicatori_icon)
-        button3 = ttk.Button(self, text="Indicatori", image=indicatori_icon, compound=tk.TOP, command=lambda: controller.show_frame(Indicatori))
+        button3 = ttk.Button(self, text="Indicatori", image=indicatori_icon, compound=tk.TOP, command=lambda: self.check_permission(Indicatori, "vendite"))
         button3.image = indicatori_icon
         button3.grid(row=2, column=2, padx=20, pady=10)
         home_icon = Image.open("home_icon.png")
         home_icon = home_icon.resize((32, 32), Image.LANCZOS)
         home_icon = ImageTk.PhotoImage(home_icon)
-        button4 = ttk.Button(self, text="Home", image=home_icon, compound=tk.TOP, command=lambda: controller.show_frame(HomePage))
+        button4 = ttk.Button(self, text="HomePage", image=home_icon, compound=tk.TOP, command=lambda: controller.show_frame(HomePage))
         button4.image = home_icon
         button4.grid(row=3, column=1, padx=20, pady=10)
         self.columnconfigure(0, weight=1)
@@ -259,6 +266,26 @@ class HomePage(tk.Frame):
         self.rowconfigure(1, weight=1)
         self.rowconfigure(2, weight=3)
         self.rowconfigure(3, weight=1)
+
+    def check_permission(self, target_frame, required_role):
+        username = self.controller.frames[LoginPage].username_entry.get()
+        gc = GoogleSheetAuth.get_instance().get_credentials()
+        sheet = gc.open_by_key(GoogleSheetAuth.SAMPLE_SPREADSHEET_ID_input)
+        worksheet = sheet.worksheet("Foglio3")
+        values = worksheet.get_all_values()
+
+        for row in values:
+            if len(row) >= 3 and row[0] == username:
+                user_role = row[2]
+                break
+        else:
+            messagebox.showerror("Errore", "Impossibile trovare il ruolo dell'utente")
+            return
+
+        if user_role == "manager" or user_role == required_role:
+            self.controller.show_frame(target_frame)
+        else:
+            messagebox.showerror("Errore", f"L'utente non ha il permesso di accedere a questa pagina (ruolo {required_role} richiesto)")
 
 class Spese(tk.Frame):
     def __init__(self, parent, controller):
@@ -510,7 +537,7 @@ class Indicatori(tk.Frame):
         self.giacenza_label = tk.Label(giacenza_frame, text='{:.2f} giorni'.format(self.avarage_days), font=('TkDefaultFont', 24))
         self.giacenza_label.grid(row=0, column=1, padx=10)
 
-        bar_chart_caption = tk.Label(main_frame, text="4) Tempo medio ricezione spedizione", font=("TkDefaultFont", 24))
+        bar_chart_caption = tk.Label(main_frame, text="4) Tempo medio invio ordine per mese", font=("TkDefaultFont", 24))
         bar_chart_caption.grid(row=5, column=0, pady=10, padx=20)
 
         bar_chart_button = ttk.Button(main_frame, text="Mostra grafico", command=self.show_bar_chart)
@@ -523,11 +550,17 @@ class Indicatori(tk.Frame):
         self.media_pezzi_venduti_label = tk.Label(media_pezzi_venduti_frame, text="{:.2f}".format(media_pezzi_venduti), font=("TkDefaultFont", 24))
         self.media_pezzi_venduti_label.grid(row=0, column=1, padx=10)
 
+        moving_average_caption = tk.Label(main_frame, text="6) Grafico pezzi venduti ogni mese", font=("TkDefaultFont", 24))
+        moving_average_caption.grid(row=7, column=0, pady=10, padx=20)
+
+        moving_average_button = ttk.Button(main_frame, text="Mostra grafico", command=self.show_totali_pezzi_venduti_chart)
+        moving_average_button.grid(row=7, column=1, pady=20, padx=20)
+
         update_button = ttk.Button(main_frame, text='Aggiorna Indicatori', command=self.update_indicators)
-        update_button.grid(row=7, column=0, pady=20, padx=20)
+        update_button.grid(row=8, column=0, pady=20, padx=20)
 
         back_button = ttk.Button(main_frame, text='Torna alla Homepage', command=lambda: controller.show_frame(HomePage))
-        back_button.grid(row=7, column=1, pady=50, padx=20)
+        back_button.grid(row=8, column=1, pady=50, padx=20)
 
 
 
@@ -622,7 +655,7 @@ class Indicatori(tk.Frame):
     
     def show_bar_chart(self):
         self.update_clients_data()
-        months, average_delivery_times = self.calculate_monthly_average_delivery_times()
+        months, average_delivery_times = self.tempo_mese()
 
         y_pos = np.arange(len(months))
         plt.bar(y_pos, average_delivery_times, align='center', alpha=0.5)
@@ -632,7 +665,7 @@ class Indicatori(tk.Frame):
         plt.tight_layout()
         plt.show()
 
-    def calculate_monthly_average_delivery_times(self):
+    def tempo_mese(self):
         monthly_data = {}
         for row in self.clients_data:
             if row[2].strip() == "" or row[3].strip() == "":
@@ -658,6 +691,40 @@ class Indicatori(tk.Frame):
         average_delivery_times = [monthly_data[month]["total_days"] / monthly_data[month]["total_orders"] for month in months]
 
         return months, average_delivery_times
+    
+    def totali_pezzi_venduti_mensili(self):
+        months_data = {}
+        
+        for row in self.clients_data:
+            if row[2].strip() == "":
+                continue
+            try:
+                entry_date = datetime.strptime(row[2], "%d/%m/%Y")
+            except ValueError:
+                continue
+
+            pezzi_venduti = int(row[1])
+            month = entry_date.strftime("%Y-%m")
+            if month in months_data:
+                months_data[month]["pezzi_venduti"] += pezzi_venduti
+            else:
+                months_data[month] = {"pezzi_venduti": pezzi_venduti}
+
+        months = sorted(months_data.keys())
+        pezzi_venduti_mensili = [months_data[month]["pezzi_venduti"] for month in months]
+        return months, pezzi_venduti_mensili
+
+    def show_totali_pezzi_venduti_chart(self):
+        self.update_clients_data()
+        months, pezzi_venduti_mensili = self.totali_pezzi_venduti_mensili()
+
+        plt.plot(months, pezzi_venduti_mensili, marker='o', linestyle='-', label='Pezzi venduti mensili')
+        plt.xticks(rotation='vertical')
+        plt.ylabel('Pezzi venduti')
+        plt.title('Pezzi venduti per mese')
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
         
 if __name__ == '__main__':
     root = tk.Tk()
