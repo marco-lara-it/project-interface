@@ -326,7 +326,7 @@ class Spese(tk.Frame):
     def setup_indicator(self):
         font = ('TkDefaultFont', 16)
 
-        ttk.Label(self.indicator_frame, text='Somma degli importi:', font=font).pack(side="left", padx=10)
+        ttk.Label(self.indicator_frame, text='Somma delle spese:', font=font).pack(side="left", padx=10)
         self.somma_importi_label = ttk.Label(self.indicator_frame, text='', font=font)
         self.somma_importi_label.pack(side="left", padx=10)
         self.update_somma_importi()
@@ -781,7 +781,7 @@ class Indicatori(tk.Frame):
                 continue
 
             pezzi_venduti = int(row[1])
-            month = entry_date.strftime("%Y-%m")
+            month = entry_date.strftime("%m/%Y")
             if month in months_data:
                 months_data[month]["pezzi_venduti"] += pezzi_venduti
             else:
@@ -790,6 +790,7 @@ class Indicatori(tk.Frame):
         months = sorted(months_data.keys())
         pezzi_venduti_mensili = [months_data[month]["pezzi_venduti"] for month in months]
         return months, pezzi_venduti_mensili
+        
 
     def show_totali_pezzi_venduti_chart(self):
         self.update_clients_data()
@@ -807,3 +808,4 @@ if __name__ == '__main__':
     root = tk.Tk()
     ex = MyApp(root)
     root.mainloop()
+    
