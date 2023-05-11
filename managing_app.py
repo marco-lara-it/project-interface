@@ -177,7 +177,7 @@ class LoginPage(tk.Frame):
 
         self.role_label = ttk.Label(new_credentials_frame, text="Ruolo:")
         self.role_label.pack(side="top", padx=10, pady=10)
-        self.role_combobox = ttk.Combobox(new_credentials_frame, values=[ "vendite", "contabile","manager"], state="readonly")
+        self.role_combobox = ttk.Combobox(new_credentials_frame, values=[ "vendite", "contabile","analista"], state="readonly")
         self.role_combobox.current(0)  # Imposta il valore predefinito su 'vendite'
         self.role_combobox.pack(side="top", padx=10, pady=10)
 
@@ -282,7 +282,7 @@ class HomePage(tk.Frame):
             messagebox.showerror("Errore", "Impossibile trovare il ruolo dell'utente")
             return
 
-        if user_role == "manager" or user_role == required_role:
+        if user_role == "analista" or user_role == required_role:
             self.controller.show_frame(target_frame)
         else:
             messagebox.showerror("Errore", f"L'utente non ha il permesso di accedere a questa pagina (ruolo {required_role} richiesto)")
@@ -338,7 +338,6 @@ class Spese(tk.Frame):
         somma_importi = sum(float(row[1]) for row in data if row[1])
         self.somma_importi_label.config(text='€ {:.2f}'.format(somma_importi))
 
-        
     def setup_causale(self):
         font = ('TkDefaultFont', 16)
         input_width = 25
@@ -383,16 +382,31 @@ class Spese(tk.Frame):
 
     def setup_treeview(self):
         columns = ('Causale', 'Importo', 'Data')
-        
+
         self.tree = ttk.Treeview(self.text_frame, columns=columns, show='headings', height=10)
         for col in columns:
             self.tree.heading(col, text=col)
             self.tree.column(col, stretch=True, width=150)
+
+        self.tree.tag_configure("pari", background="lightgray")
+        self.tree.tag_configure("dispari", background="white")
+
+        data_list = [
+            ("Personale", 1000, "2023-05-11"),
+            ("Fornitori", 2000, "2023-05-12"),
+            ("Gestionale", 1500, "2023-05-13"),
+        ]
+
+        for i, row_data in enumerate(data_list):
+            row_tag = "pari" if i % 2 == 0 else "dispari"
+            self.tree.insert('', 'end', values=row_data, tags=row_tag)
+
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
         vsb = ttk.Scrollbar(self.text_frame, orient="vertical", command=self.tree.yview)
         vsb.pack(side='right', fill='y')
         self.tree.configure(yscrollcommand=vsb.set)
+
 
     def setup_aggiorna_button(self):
         font = ('TkDefaultFont', 16)
@@ -404,11 +418,11 @@ class Spese(tk.Frame):
         data = sheet.get_all_values()
         for i in self.tree.get_children():
             self.tree.delete(i)
-        for row in data:
-            self.tree.insert('', 'end', values=row)
+        for index, row in enumerate(data):
+            row_tag = "pari" if index % 2 == 0 else "dispari"
+            self.tree.insert('', 'end', values=row, tags=row_tag)
 
         self.update_somma_importi()
-
 
     def salva_dati(self):
         causale = self.causale_var.get().strip()
@@ -471,6 +485,8 @@ class Clienti(tk.Frame):
 
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
+        self.tree.tag_configure("pari", background="lightgray")
+        self.tree.tag_configure("dispari", background="white")
         vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
         vsb.pack(side='right', fill='y')
         self.tree.configure(yscrollcommand=vsb.set)
@@ -486,16 +502,17 @@ class Clienti(tk.Frame):
         for i in self.tree.get_children():
             self.tree.delete(i)
         
-        gc = GoogleSheetAuth.get_instance().get_credentials()  # Utilizza la classe GoogleSheetAuth per ottenere le credenziali
+        gc = GoogleSheetAuth.get_instance().get_credentials()
         sheet = gc.open_by_key(SAMPLE_SPREADSHEET_ID_input)
-        sheet2 = sheet.get_worksheet(1)  # 1 indica il secondo foglio (Foglio2)
+        sheet2 = sheet.get_worksheet(1)
         data = sheet2.get_all_values()
         
-        for row in data:
-            if len(row) >= 4:  # Cambia il valore da 3 a 4
-                self.tree.insert('', 'end', values=(row[0], row[1], row[2], row[3]))  
+        for index, row in enumerate(data):
+            row_tag = "pari" if index % 2 == 0 else "dispari"
+            if len(row) >= 4:
+                self.tree.insert('', 'end', values=(row[0], row[1], row[2], row[3]), tags=row_tag)
             else:
-                self.tree.insert('', 'end', values=(row[0], row[1], '', ''))
+                self.tree.insert('', 'end', values=(row[0], row[1], '', ''), tags=row_tag)
 
 class Indicatori(tk.Frame):
     def __init__(self, parent, controller):
