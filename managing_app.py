@@ -474,35 +474,35 @@ class Clienti(tk.Frame):
 
     def setup_treeview(self):
         columns = ('Cliente', 'Pezzi venduti', 'Data ordine', 'Data spedizione')
-                    
-        style = ttk.Style()
-        style.configure("Custom.Treeview", background="white", foreground="black")
-        style.configure("Custom.Treeview.Heading", background="white", foreground="black")
-        style.configure("Custom.Vertical.TScrollbar", background="white", troughcolor="white")
 
-        self.tree_frame = ctk.CTkFrame(self)
-        self.tree_frame.pack(fill=tk.BOTH, padx=10, pady=10, expand=True)
+        tree_frame = ctk.CTkFrame(self)
+        tree_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
 
-        self.tree = ttk.Treeview(self.tree_frame, columns=columns, show='headings', height=10)
+        self.tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=20, style="Custom.Treeview")
         for col in columns:
             self.tree.heading(col, text=col)
-            self.tree.column(col, stretch=True, width=150)
-
-        data_list = [
-            ("Cliente 1", 10, "2023-05-11", "2023-05-12"),
-            ("Cliente 2", 20, "2023-05-12", "2023-05-13"),
-            ("Cliente 3", 15, "2023-05-13", "2023-05-14"),
-        ]
-
-        for i, row_data in enumerate(data_list):
-            row_tag = "pari" if i % 2 == 0 else "dispari"
-            self.tree.insert('', 'end', values=row_data, tags=row_tag)
+            if col == "Data spedizione":
+                self.tree.column(col, stretch=True, width=100)
+            elif col != "Data ordine":
+                self.tree.column(col, stretch=True, width=200)
+            else:
+                self.tree.column(col, stretch=True, width=100)
 
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        vsb = ttk.Scrollbar(self.tree_frame, orient="vertical", command=self.tree.yview)
+        style = ttk.Style()
+        style.configure("Custom.Treeview", background="lightgray", foreground="black")#scritte
+        style.configure("Custom.Treeview.Heading", background="white", foreground="white")
+        style.configure("Custom.Vertical.TScrollbar", background="white", troughcolor="white")
+
+        self.tree.tag_configure("pari", background="lightgray")
+        self.tree.tag_configure("dispari", background="white")
+
+        vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview, style="Custom.Vertical.TScrollbar")
         vsb.pack(side='right', fill='y')
         self.tree.configure(yscrollcommand=vsb.set)
+
+
 
     def setup_buttons(self):
         button1 = ctk.CTkButton(self, text='Aggiorna dati', command=self.update_data)
@@ -511,21 +511,19 @@ class Clienti(tk.Frame):
         button2 = ctk.CTkButton(self, text='Torna alla Homepage', command=lambda: self.controller.show_frame(HomePage))
         button2.pack(padx=10, pady=10)
 
+
     def update_data(self):
-        for i in self.tree.get_children():
-            self.tree.delete(i)
-        
+        self.tree.delete(*self.tree.get_children())
+
         gc = GoogleSheetAuth.get_instance().get_credentials()
         sheet = gc.open_by_key(SAMPLE_SPREADSHEET_ID_input)
         sheet2 = sheet.get_worksheet(1)
         data = sheet2.get_all_values()
-        
+
         for index, row in enumerate(data):
             row_tag = "pari" if index % 2 == 0 else "dispari"
-            if len(row) >= 4:
-                self.tree.insert('', 'end', values=(row[0], row[1], row[2], row[3]), tags=row_tag)
-            else:
-                self.tree.insert('', 'end', values=(row[0], row[1], '', ''), tags=row_tag)
+            values = (row[0], row[1], row[2], row[3]) if len(row) >= 4 else (row[0], row[1], '', '')
+            self.tree.insert('', 'end', values=values, tags=row_tag)
 
 class Indicatori(tk.Frame):
     def __init__(self, parent, controller):
