@@ -1,5 +1,9 @@
 import tkinter as tk
 import tkinter.ttk as ttk
+import customtkinter as ctk
+from PIL import Image
+from PIL import ImageTk
+from customtkinter.windows.widgets.image.ctk_image import CTkImage
 import os
 import pickle
 import gspread
@@ -10,7 +14,6 @@ from google.auth.transport.requests import Request
 from tkcalendar import DateEntry
 from datetime import datetime, date
 from tkcalendar import DateEntry
-from PIL import Image, ImageTk
 from googleapiclient.errors import HttpError
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -69,16 +72,15 @@ class MyApp(tk.Frame):
         self.pack()
 
     def initUI(self):
-        self.style = ttk.Style()
-        self.style.theme_use('default')
-        self.style.configure('TLabel', font=('TkDefaultFont', 20), padding=10)
-        self.style.configure('TEntry', font=('TkDefaultFont', 20), padding=10)
-        self.style.configure('TButton', font=('TkDefaultFont', 20), padding=10)
-
         container = tk.Frame(self.master)
         container.pack(fill='both', expand=True)
 
         self.frames = {}
+
+        # Configura lo stile per i widget di customtkinter
+        ctk.CTkLabel.default_font = ('TkDefaultFont', 20)
+        ctk.CTkEntry.default_font = ('TkDefaultFont', 20)
+        ctk.CTkButton.default_font = ('TkDefaultFont', 20)
 
         for F in (LoginPage, HomePage, Spese, Clienti, Indicatori):
             frame = F(container, self)
@@ -102,30 +104,30 @@ class LoginPage(tk.Frame):
         self.controller = controller
         self.pack(expand=True)
 
-        self.login_frame = ttk.Frame(self)
+        self.login_frame = ctk.CTkFrame(self)
         self.login_frame.pack(expand=True)
 
-        self.instructions_label = ttk.Label(self.login_frame, text="Inserisci l'username e la password per accedere all'app:")
+        self.instructions_label = ctk.CTkLabel(self.login_frame, text="Inserisci l'username e la password per accedere all'app:")
         self.instructions_label.pack(pady=10)
 
-        self.username_label = ttk.Label(self.login_frame, text="Username")
+        self.username_label = ctk.CTkLabel(self.login_frame, text="Username")
         self.username_label.pack(side="top", padx=10, pady=10)
-        self.username_entry = ttk.Entry(self.login_frame)
+        self.username_entry = ctk.CTkEntry(self.login_frame)
         self.username_entry.pack(side="top", padx=10, pady=10)
 
-        self.password_label = ttk.Label(self.login_frame, text="Password")
+        self.password_label = ctk.CTkLabel(self.login_frame, text="Password")
         self.password_label.pack(side="top", padx=10, pady=10)
-        self.password_entry = ttk.Entry(self.login_frame, show="*")
+        self.password_entry = ctk.CTkEntry(self.login_frame, show="*")
         self.password_entry.pack(side="top", padx=10, pady=10)
 
         self.show_password_var = tk.BooleanVar()
-        self.show_password_checkbutton = ttk.Checkbutton(self.login_frame, text="Mostra password", variable=self.show_password_var, command=lambda: self.mostra_password(self.password_entry))
+        self.show_password_checkbutton = ctk.CTkCheckBox(self.login_frame, text="Mostra password", variable=self.show_password_var, command=lambda: self.mostra_password(self.password_entry))
         self.show_password_checkbutton.pack(side="top", padx=10, pady=10)
 
-        self.login_button = ttk.Button(self.login_frame, text="Login", command=self.login)
+        self.login_button = ctk.CTkButton(self.login_frame, text="Login", command=self.login)
         self.login_button.pack(side="top", padx=10, pady=10)
 
-        self.add_credentials_button = ttk.Button(self.login_frame, text="Registrati", command=self.create_credentials)
+        self.add_credentials_button = ctk.CTkButton(self.login_frame, text="Registrati", command=self.create_credentials)
         self.add_credentials_button.pack(side="top", padx=10, pady=10)
 
         self.username_entry.bind("<Return>", lambda event: self.password_entry.focus())
@@ -153,39 +155,38 @@ class LoginPage(tk.Frame):
             tk.messagebox.showerror("Errore", "Impossibile accedere al foglio di Google Sheets")
 
     def create_credentials(self):
-
         new_credentials_window = tk.Toplevel(self.master)
         new_credentials_window.title("Crea nuove credenziali")
 
-        new_credentials_frame = ttk.Frame(new_credentials_window)
+        new_credentials_frame = ctk.CTkFrame(new_credentials_window)
         new_credentials_frame.pack(expand=True)
 
-        new_username_label = ttk.Label(new_credentials_frame, text="Nuovo Username:")
+        new_username_label = ctk.CTkLabel(new_credentials_frame, text="Nuovo Username:")
         new_username_label.pack(side="top", padx=10, pady=10)
-        self.new_username_entry = ttk.Entry(new_credentials_frame)
+        self.new_username_entry = ctk.CTkEntry(new_credentials_frame)
         self.new_username_entry.pack(side="top", padx=10, pady=10)
 
-        new_password_label = ttk.Label(new_credentials_frame, text="Nuova Password:")
+        new_password_label = ctk.CTkLabel(new_credentials_frame, text="Nuova Password:")
         new_password_label.pack(side="top", padx=10, pady=10)
-        self.new_password_entry = ttk.Entry(new_credentials_frame, show="*")
+        self.new_password_entry = ctk.CTkEntry(new_credentials_frame, show="*")
         self.new_password_entry.pack(side="top", padx=10, pady=10)
 
-        new_password_confirm_label = ttk.Label(new_credentials_frame, text="Conferma Password:")
+        new_password_confirm_label = ctk.CTkLabel(new_credentials_frame, text="Conferma Password:")
         new_password_confirm_label.pack(side="top", padx=10, pady=10)
-        self.new_password_confirm_entry = ttk.Entry(new_credentials_frame, show="*")
+        self.new_password_confirm_entry = ctk.CTkEntry(new_credentials_frame, show="*")
         self.new_password_confirm_entry.pack(side="top", padx=10, pady=10)
 
-        self.role_label = ttk.Label(new_credentials_frame, text="Ruolo:")
+        self.role_label = ctk.CTkLabel(new_credentials_frame, text="Ruolo:")
         self.role_label.pack(side="top", padx=10, pady=10)
-        self.role_combobox = ttk.Combobox(new_credentials_frame, values=[ "vendite", "contabile","analista"], state="readonly")
-        self.role_combobox.current(0)  # Imposta il valore predefinito su 'vendite'
+        self.role_combobox = ctk.CTkComboBox(new_credentials_frame, values=[ "vendite", "contabile","analista"], state="readonly")
+        self.role_combobox.set("vendite")  # Imposta il valore predefinito su 'vendite'
         self.role_combobox.pack(side="top", padx=10, pady=10)
 
         self.show_new_password_var = tk.BooleanVar()
-        self.show_new_password_checkbutton = ttk.Checkbutton(new_credentials_frame, text="Mostra password", variable=self.show_new_password_var, command=lambda: self.mostra_password(self.new_password_entry, self.new_password_confirm_entry))
+        self.show_new_password_checkbutton = ctk.CTkCheckBox(new_credentials_frame, text="Mostra password", variable=self.show_new_password_var, command=lambda: self.mostra_password(self.new_password_entry, self.new_password_confirm_entry))
         self.show_new_password_checkbutton.pack(side="top", padx=10, pady=10)
 
-        add_credentials_button = ttk.Button(new_credentials_frame, text="Aggiungi", command=lambda: self.add_credentials(new_credentials_window))
+        add_credentials_button = ctk.CTkButton(new_credentials_frame, text="Aggiungi", command=lambda: self.add_credentials(new_credentials_window))
         add_credentials_button.pack(side="top", padx=10, pady=10)
 
     def add_credentials(self, new_credentials_window):
@@ -221,51 +222,54 @@ class LoginPage(tk.Frame):
     def mostra_password(self, *entries):
         for entry in entries:
             if entry.cget('show') == "":
-                entry.config(show="*")
+                entry.configure(show="*")
             else:
-                entry.config(show="")
+                entry.configure(show="")
 
-class HomePage(tk.Frame):
+class HomePage(ctk.CTkFrame):
     def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
+        ctk.CTkFrame.__init__(self, parent)
         self.controller = controller
-        label = ttk.Label(self, text='Home Page', font=('TkDefaultFont', 20))
+        label = ctk.CTkLabel(self, text='Home Page', font=('TkDefaultFont', 20))
         label.grid(row=0, column=0, columnspan=3, pady=20)
-        description_label = tk.Label(self, text='Benvenuto nell\'applicazione.\n'
-                                                'Questa è la Home Page, da qui puoi accedere alle diverse funzionalità.',
-                                      font=('TkDefaultFont', 26), justify='center')
+
+        description_label = ctk.CTkLabel(self, text='Benvenuto nell\'applicazione.\nQuesta è la Home Page, da qui puoi accedere alle diverse funzionalità.', font=('TkDefaultFont', 26), justify='center')
         description_label.grid(row=1, column=0, columnspan=3, pady=20)
+
         bilancio_icon = Image.open("bilancio_icon.png")
         bilancio_icon = bilancio_icon.resize((64, 64), Image.LANCZOS)
         bilancio_icon = ImageTk.PhotoImage(bilancio_icon)
-        button1 = ttk.Button(self, text="Spese", image=bilancio_icon, compound=tk.TOP, command=lambda: self.check_permission(Spese, "contabile"))
+        button1 = ctk.CTkButton(self, text="Spese", image=bilancio_icon, compound=tk.TOP, command=lambda: self.check_permission(Spese, "contabile"))
         button1.image = bilancio_icon  
         button1.grid(row=2, column=0, padx=20, pady=10)
+
         clienti_icon = Image.open("clienti_icon.png")
         clienti_icon = clienti_icon.resize((64, 64), Image.LANCZOS)
         clienti_icon = ImageTk.PhotoImage(clienti_icon)
-        button2 = ttk.Button(self, text="Clienti", image=clienti_icon, compound=tk.TOP, command=lambda: self.check_permission(Clienti, "vendite"))
+        button2 = ctk.CTkButton(self, text="Clienti", image=clienti_icon, compound=tk.TOP, command=lambda: self.check_permission(Clienti, "vendite"))
         button2.image = clienti_icon  
         button2.grid(row=2, column=1, padx=20, pady=10)
+
         indicatori_icon = Image.open("indicatori_icon.png")
         indicatori_icon = indicatori_icon.resize((64, 64), Image.LANCZOS)
         indicatori_icon = ImageTk.PhotoImage(indicatori_icon)
-        button3 = ttk.Button(self, text="Indicatori", image=indicatori_icon, compound=tk.TOP, command=lambda: self.check_permission(Indicatori, "vendite"))
+        button3 = ctk.CTkButton(self, text="Indicatori", image=indicatori_icon, compound=tk.TOP, command=lambda: self.check_permission(Indicatori, "vendite"))
         button3.image = indicatori_icon
         button3.grid(row=2, column=2, padx=20, pady=10)
+
         home_icon = Image.open("home_icon.png")
         home_icon = home_icon.resize((32, 32), Image.LANCZOS)
         home_icon = ImageTk.PhotoImage(home_icon)
-        button4 = ttk.Button(self, text="HomePage", image=home_icon, compound=tk.TOP, command=lambda: controller.show_frame(HomePage))
+        button4 = ctk.CTkButton(self, text="HomePage", image=home_icon, compound=tk.TOP, command=lambda: controller.show_frame(HomePage))
         button4.image = home_icon
         button4.grid(row=3, column=1, padx=20, pady=10)
+
         self.columnconfigure(0, weight=1)
         self.columnconfigure(1, weight=1)
         self.columnconfigure(2, weight=1)
         self.rowconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
         self.rowconfigure(2, weight=3)
-        self.rowconfigure(3, weight=1)
 
     def check_permission(self, target_frame, required_role):
         username = self.controller.frames[LoginPage].username_entry.get()
@@ -304,30 +308,30 @@ class Spese(tk.Frame):
         self.update_data()
 
     def setup_frames(self):
-        self.header_frame = tk.Frame(self)
-        self.header_frame.pack(fill=tk.X, padx=10, pady=10)
-        self.causale_frame = tk.Frame(self) 
-        self.causale_frame.pack(side="top", anchor="w", padx=10, pady=10)
-        self.importo_frame = tk.Frame(self)
+        self.header_frame = ctk.CTkFrame(self)
+        self.header_frame.pack(fill=ctk.X, padx=10, pady=10)
+        self.causale_frame = ctk.CTkFrame(self) 
+        self.causale_frame.pack(side="top", anchor="w", padx=10, pady=10 )
+        self.importo_frame = ctk.CTkFrame(self)
         self.importo_frame.pack(side="top", anchor="w", padx=10, pady=10)
-        self.data_frame = tk.Frame(self)
+        self.data_frame = ctk.CTkFrame(self)
         self.data_frame.pack(side="top", anchor="w", padx=10, pady=10)
-        self.indicator_frame = tk.Frame(self)
+        self.indicator_frame = ctk.CTkFrame(self)
         self.indicator_frame.pack(side="top", anchor="e", padx=10, pady=10)
-        self.text_frame = tk.Frame(self)
-        self.text_frame.pack(fill=tk.BOTH, padx=10, pady=10, expand=True)
+        self.text_frame = ctk.CTkFrame(self)
+        self.text_frame.pack(fill=ctk.BOTH, padx=10, pady=10, expand=True)
 
     def setup_header(self):
-        label = ttk.Label(self.header_frame, text='Spese', font=('DefaultFont', 20))
+        label = ctk.CTkLabel(self.header_frame, text='Spese', font=('DefaultFont', 20))
         label.pack(side=tk.LEFT, padx=10, pady=10)
-        button = ttk.Button(self.header_frame, text='Torna alla Homepage', command=lambda: self.controller.show_frame(HomePage))
+        button = ctk.CTkButton(self.header_frame, text='Torna alla Homepage', command=lambda: self.controller.show_frame(HomePage))
         button.pack(side=tk.RIGHT, padx=10, pady=10)
     
     def setup_indicator(self):
         font = ('TkDefaultFont', 16)
 
-        ttk.Label(self.indicator_frame, text='Somma delle spese:', font=font).pack(side="left", padx=10)
-        self.somma_importi_label = ttk.Label(self.indicator_frame, text='', font=font)
+        ctk.CTkLabel(self.indicator_frame, text='Somma delle spese:', font=font).pack(side="left", padx=10)
+        self.somma_importi_label = ctk.CTkLabel(self.indicator_frame, text='', font=font)
         self.somma_importi_label.pack(side="left", padx=10)
         self.update_somma_importi()
 
@@ -336,22 +340,21 @@ class Spese(tk.Frame):
         sheet = gc.open_by_key(GoogleSheetAuth.SAMPLE_SPREADSHEET_ID_input).sheet1
         data = sheet.get_all_values()
         somma_importi = sum(float(row[1]) for row in data if row[1])
-        self.somma_importi_label.config(text='€ {:.2f}'.format(somma_importi))
+        self.somma_importi_label.configure(text='€ {:.2f}'.format(somma_importi))
 
     def setup_causale(self):
         font = ('TkDefaultFont', 16)
-        input_width = 25
-        ttk.Label(self.causale_frame, text='Causale:', font=font).pack(side="left", padx=10)
+        input_width = 250
+        ctk.CTkLabel(self.causale_frame, text='Causale:', font=font).pack(side="left", padx=10)
         self.causale_options = ['Personale', 'Fornitori', 'Gestionale']
-        self.causale_var = tk.StringVar()
-        self.input1 = ttk.Combobox(self.causale_frame, textvariable=self.causale_var, values=self.causale_options, state='readonly', width=input_width)
+        self.input1 = ctk.CTkComboBox(self.causale_frame, values=self.causale_options, state='readonly', width=input_width)
         self.input1.set(self.causale_options[0])  # Set the default option
         self.input1.pack(side="left", padx=10)
         self.input1.bind('<Return>', lambda event: self.salva_dati())
 
     def setup_importo(self):
         font = ('TkDefaultFont', 16)
-        input_width = 25
+        input_width = 250
 
         def validate_numeric_input(new_value):
             if new_value == "":
@@ -363,27 +366,32 @@ class Spese(tk.Frame):
                 return False
 
         vcmd = (self.register(validate_numeric_input), "%P")
-        ttk.Label(self.importo_frame, text='Importo:', font=font).pack(side="left", padx=10)
-        self.input2 = ttk.Entry(self.importo_frame, validate="key", validatecommand=vcmd, width=input_width)
+        ctk.CTkLabel(self.importo_frame, text='Importo:', font=font).pack(side="left", padx=10)
+        self.input2 = ctk.CTkEntry(self.importo_frame, validate="key", validatecommand=vcmd, width=input_width)
         self.input2.pack(side="left", padx=10)
         self.input2.bind('<Return>', lambda event: self.salva_dati())
 
     def setup_data(self):
         font = ('TkDefaultFont', 16)
         input_width = 25
-        ttk.Label(self.data_frame, text='Data:', font=font).pack(side="left", padx=10)
+        ctk.CTkLabel(self.data_frame, text='Data:', font=font).pack(side="left", padx=10)
         self.input3 = DateEntry(self.data_frame, date_pattern='dd.mm.yyyy', background='darkblue', foreground='white', borderwidth=2, width=input_width)
         self.input3.pack(side="left", padx=10)
         self.input3.bind('<Return>', lambda event: self.salva_dati())
 
     def setup_salva_button(self):
         font = ('TkDefaultFont', 16)
-        tk.Button(self, text='Salva', font=font, command=self.salva_dati, width=15, bg='white').pack(fill=tk.X, padx=10, pady=10)
+        ctk.CTkButton(self, text='Salva', font=font, command=self.salva_dati, width=15).pack(fill=ctk.X, padx=10, pady=10)
 
     def setup_treeview(self):
         columns = ('Causale', 'Importo', 'Data')
 
-        self.tree = ttk.Treeview(self.text_frame, columns=columns, show='headings', height=10)
+        style = ttk.Style()
+        style.configure("Custom.Treeview", background="white", foreground="black")
+        style.configure("Custom.Treeview.Heading", background="white", foreground="black")
+        style.configure("Custom.Vertical.TScrollbar", background="white", troughcolor="white")
+
+        self.tree = ttk.Treeview(self.text_frame, columns=columns, show='headings', height=10, style="Custom.Treeview")
         for col in columns:
             self.tree.heading(col, text=col)
             self.tree.column(col, stretch=True, width=150)
@@ -403,14 +411,13 @@ class Spese(tk.Frame):
 
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        vsb = ttk.Scrollbar(self.text_frame, orient="vertical", command=self.tree.yview)
+        vsb = ttk.Scrollbar(self.text_frame, orient="vertical", command=self.tree.yview, style="Custom.Vertical.TScrollbar")
         vsb.pack(side='right', fill='y')
         self.tree.configure(yscrollcommand=vsb.set)
 
-
     def setup_aggiorna_button(self):
         font = ('TkDefaultFont', 16)
-        tk.Button(self, text='Aggiorna dati', font=font, command=self.update_data, width=15, bg='white').pack(fill=tk.X, padx=10, pady=10)
+        ctk.CTkButton(self, text='Aggiorna dati', font=font, command=self.update_data, width=15).pack(fill=ctk.X, padx=10, pady=10)
 
     def update_data(self):
         gc = GoogleSheetAuth.get_instance().get_credentials()
@@ -425,7 +432,7 @@ class Spese(tk.Frame):
         self.update_somma_importi()
 
     def salva_dati(self):
-        causale = self.causale_var.get().strip()
+        causale = self.input1.get().strip()
         importo = self.input2.get().strip()
         data_selezionata = self.input3.get_date()
         data_string = data_selezionata.strftime('%Y-%m-%d')
@@ -452,50 +459,56 @@ class Spese(tk.Frame):
         else:
             tk.messagebox.showerror('Errore', 'Inserisci tutti i dati per proseguire.')
 
-
 class Clienti(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
-
         self.setup_header()
         self.setup_treeview()
         self.setup_buttons()
         self.update_data()
 
     def setup_header(self):
-        label = ttk.Label(self, text='Clienti', font=('TkDefaultFont', 20))
+        label = ctk.CTkLabel(self, text='Clienti', font=('TkDefaultFont', 20))
         label.pack(padx=10, pady=10)
 
     def setup_treeview(self):
         columns = ('Cliente', 'Pezzi venduti', 'Data ordine', 'Data spedizione')
+                    
+        style = ttk.Style()
+        style.configure("Custom.Treeview", background="white", foreground="black")
+        style.configure("Custom.Treeview.Heading", background="white", foreground="black")
+        style.configure("Custom.Vertical.TScrollbar", background="white", troughcolor="white")
 
-        tree_frame = ttk.Frame(self)  # Create a frame to contain the treeview and scrollbar
-        tree_frame.pack(padx=10, pady=10, fill=tk.BOTH, expand=True)
+        self.tree_frame = ctk.CTkFrame(self)
+        self.tree_frame.pack(fill=tk.BOTH, padx=10, pady=10, expand=True)
 
-        self.tree = ttk.Treeview(tree_frame, columns=columns, show='headings', height=20)  # Set the height of the treeview
+        self.tree = ttk.Treeview(self.tree_frame, columns=columns, show='headings', height=10)
         for col in columns:
             self.tree.heading(col, text=col)
-            if col == "Data spedizione":
-                self.tree.column(col, stretch=True, width=100)
-            elif col != "Data ordine":
-                self.tree.column(col, stretch=True, width=200)
-            else:
-                self.tree.column(col, stretch=True, width=100)
+            self.tree.column(col, stretch=True, width=150)
+
+        data_list = [
+            ("Cliente 1", 10, "2023-05-11", "2023-05-12"),
+            ("Cliente 2", 20, "2023-05-12", "2023-05-13"),
+            ("Cliente 3", 15, "2023-05-13", "2023-05-14"),
+        ]
+
+        for i, row_data in enumerate(data_list):
+            row_tag = "pari" if i % 2 == 0 else "dispari"
+            self.tree.insert('', 'end', values=row_data, tags=row_tag)
 
         self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
 
-        self.tree.tag_configure("pari", background="lightgray")
-        self.tree.tag_configure("dispari", background="white")
-        vsb = ttk.Scrollbar(tree_frame, orient="vertical", command=self.tree.yview)
+        vsb = ttk.Scrollbar(self.tree_frame, orient="vertical", command=self.tree.yview)
         vsb.pack(side='right', fill='y')
         self.tree.configure(yscrollcommand=vsb.set)
 
     def setup_buttons(self):
-        button1 = ttk.Button(self, text='Aggiorna dati', command=self.update_data)
+        button1 = ctk.CTkButton(self, text='Aggiorna dati', command=self.update_data)
         button1.pack(padx=10, pady=10)
 
-        button2 = ttk.Button(self, text='Torna alla Homepage', command=lambda: self.controller.show_frame(HomePage))
+        button2 = ctk.CTkButton(self, text='Torna alla Homepage', command=lambda: self.controller.show_frame(HomePage))
         button2.pack(padx=10, pady=10)
 
     def update_data(self):
@@ -528,7 +541,7 @@ class Indicatori(tk.Frame):
         main_frame = tk.Frame(self)
         main_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        label = ttk.Label(main_frame, text='Indicatori', font=('TkDefaultFont', 30))
+        label = ctk.CTkLabel(main_frame, text='Indicatori', font=('TkDefaultFont', 30))
         label.grid(row=0, column=0, pady=50, padx=20, columnspan=2)
 
         date_frame = tk.Frame(main_frame)
@@ -550,7 +563,7 @@ class Indicatori(tk.Frame):
         self.date_end = DateEntry(date_frame, width=12, background='blue', foreground='white', font=('TkDefaultFont', 14))
         self.date_end.grid(row=0, column=3, padx=10)
 
-        description_label = ttk.Label(main_frame, text='Questa pagina mostra alcuni indicatori.', font=('TkDefaultFont', 20))
+        description_label = ctk.CTkLabel(main_frame, text='Questa pagina mostra alcuni indicatori.', font=('TkDefaultFont', 20))
         description_label.grid(row=2, column=0, pady=10, padx=20, columnspan=2)
 
         sum_frame = tk.Frame(main_frame)
@@ -563,7 +576,7 @@ class Indicatori(tk.Frame):
         pie_chart_caption = tk.Label(main_frame, text='2) Grafico clienti e pezzi', font=('TkDefaultFont', 24))
         pie_chart_caption.grid(row=4, column=0, pady=10, padx=20)
 
-        pie_chart_button = ttk.Button(main_frame, text='Mostra grafico', command=self.show_pie_chart)
+        pie_chart_button = ctk.CTkButton(main_frame, text='Mostra grafico', command=self.show_pie_chart)
         pie_chart_button.grid(row=4, column=1, pady=20, padx=20)
 
         giacenza_frame = tk.Frame(main_frame)
@@ -578,7 +591,7 @@ class Indicatori(tk.Frame):
         bar_chart_caption = tk.Label(main_frame, text="4) Tempo medio invio ordine per mese", font=("TkDefaultFont", 24))
         bar_chart_caption.grid(row=6, column=0, pady=10, padx=20)
 
-        bar_chart_button = ttk.Button(main_frame, text="Mostra grafico", command=self.show_bar_chart)
+        bar_chart_button = ctk.CTkButton(main_frame, text="Mostra grafico", command=self.show_bar_chart)
         bar_chart_button.grid(row=6, column=1, pady=20, padx=20)
 
         media_pezzi_venduti_frame = tk.Frame(main_frame)
@@ -591,13 +604,13 @@ class Indicatori(tk.Frame):
         moving_average_caption = tk.Label(main_frame, text="6) Grafico pezzi venduti ogni mese", font=("TkDefaultFont", 24))
         moving_average_caption.grid(row=8, column=0, pady=10, padx=20)
 
-        moving_average_button = ttk.Button(main_frame, text="Mostra grafico", command=self.show_totali_pezzi_venduti_chart)
+        moving_average_button = ctk.CTkButton(main_frame, text="Mostra grafico", command=self.show_totali_pezzi_venduti_chart)
         moving_average_button.grid(row=8, column=1, pady=20, padx=20)
 
-        update_button = ttk.Button(main_frame, text='Aggiorna Indicatori', command=self.update_indicators)
+        update_button = ctk.CTkButton(main_frame, text='Aggiorna Indicatori', command=self.update_indicators)
         update_button.grid(row=9, column=0, pady=20, padx=20)
 
-        back_button = ttk.Button(main_frame, text='Torna alla Homepage', command=lambda: controller.show_frame(HomePage))
+        back_button = ctk.CTkButton(main_frame, text='Torna alla Homepage', command=lambda: controller.show_frame(HomePage))
         back_button.grid(row=9, column=1, pady=50, padx=20)
 
     def update_expenses_data(self, start_date=None, end_date=None):
