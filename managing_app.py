@@ -2,6 +2,8 @@ import tkinter as tk
 import tkinter.ttk as ttk
 import customtkinter
 import customtkinter as ctk
+from customtkinter import CTkFont
+import tkinter.colorchooser as colorchooser
 from PIL import Image
 from PIL import ImageTk
 from customtkinter.windows.widgets.image.ctk_image import CTkImage
@@ -110,28 +112,30 @@ class LoginPage(tk.Frame):
         self.login_frame = ctk.CTkFrame(self)
         self.login_frame.pack(expand=True)
 
-        self.instructions_label = ctk.CTkLabel(self.login_frame, text="Inserisci l'username e la password per accedere all'app:")
-        self.instructions_label.pack(pady=10)
+        self.custom_font = CTkFont(size=20)  # Aumenta la dimensione del font
 
-        self.username_label = ctk.CTkLabel(self.login_frame, text="Username")
-        self.username_label.pack(side="top", padx=10, pady=10)
-        self.username_entry = ctk.CTkEntry(self.login_frame)
-        self.username_entry.pack(side="top", padx=10, pady=10)
+        self.instructions_label = ctk.CTkLabel(self.login_frame, text="Inserisci l'username e la password per accedere all'app:", font=self.custom_font)
+        self.instructions_label.pack(pady=30)  # Aumenta la spaziatura
 
-        self.password_label = ctk.CTkLabel(self.login_frame, text="Password")
-        self.password_label.pack(side="top", padx=10, pady=10)
-        self.password_entry = ctk.CTkEntry(self.login_frame, show="*")
-        self.password_entry.pack(side="top", padx=10, pady=10)
+        self.username_label = ctk.CTkLabel(self.login_frame, text="Username", font=self.custom_font)
+        self.username_label.pack(side="top", padx=30, pady=30)  # Aumenta la spaziatura
+        self.username_entry = ctk.CTkEntry(self.login_frame, font=self.custom_font)
+        self.username_entry.pack(side="top", padx=20, pady=10)
+
+        self.password_label = ctk.CTkLabel(self.login_frame, text="Password", font=self.custom_font)
+        self.password_label.pack(side="top", padx=30, pady=30)  # Aumenta la spaziatura
+        self.password_entry = ctk.CTkEntry(self.login_frame, show="*", font=self.custom_font)
+        self.password_entry.pack(side="top", padx=20, pady=10)
 
         self.show_password_var = tk.BooleanVar()
-        self.show_password_checkbutton = ctk.CTkCheckBox(self.login_frame, text="Mostra password", variable=self.show_password_var, command=lambda: self.mostra_password(self.password_entry))
-        self.show_password_checkbutton.pack(side="top", padx=10, pady=10)
+        self.show_password_checkbutton = ctk.CTkCheckBox(self.login_frame, text="Mostra password", variable=self.show_password_var, command=lambda: self.mostra_password(self.password_entry), font=self.custom_font)
+        self.show_password_checkbutton.pack(side="top", padx=20, pady=10)
 
-        self.login_button = ctk.CTkButton(self.login_frame, text="Login", command=self.login)
-        self.login_button.pack(side="top", padx=10, pady=10)
+        self.login_button = ctk.CTkButton(self.login_frame, text="Login", command=self.login, font=self.custom_font)
+        self.login_button.pack(side="top", padx=30, pady=30)  # Aumenta la spaziatura
 
-        self.add_credentials_button = ctk.CTkButton(self.login_frame, text="Registrati", command=self.create_credentials)
-        self.add_credentials_button.pack(side="top", padx=10, pady=10)
+        self.add_credentials_button = ctk.CTkButton(self.login_frame, text="Registrati", command=self.create_credentials, font=self.custom_font)
+        self.add_credentials_button.pack(side="top", padx=20, pady=10)
 
         self.username_entry.bind("<Return>", lambda event: self.password_entry.focus())
         self.password_entry.bind("<Return>", lambda event: self.login())
@@ -233,6 +237,11 @@ class HomePage(ctk.CTkFrame):
     def __init__(self, parent, controller):
         ctk.CTkFrame.__init__(self, parent)
         self.controller = controller
+
+        
+        self.grid_columnconfigure((0, 1, 2), weight=1)
+        self.grid_rowconfigure((0, 1, 2, 3), weight=1)
+
         label = ctk.CTkLabel(self, text='Home Page', font=('TkDefaultFont', 20))
         label.grid(row=0, column=0, columnspan=3, pady=20)
 
@@ -240,39 +249,43 @@ class HomePage(ctk.CTkFrame):
         description_label.grid(row=1, column=0, columnspan=3, pady=20)
 
         bilancio_icon = Image.open("bilancio_icon.png")
-        bilancio_icon = bilancio_icon.resize((64, 64), Image.LANCZOS)
+        bilancio_icon = bilancio_icon.resize((128, 128), Image.LANCZOS)
         bilancio_icon = ctk.CTkImage(bilancio_icon)
         button1 = ctk.CTkButton(self, text="Spese", image=bilancio_icon, compound=tk.TOP, command=lambda: self.check_permission(Spese, "contabile"))
         button1.image = bilancio_icon  
         button1.grid(row=2, column=0, padx=20, pady=10)
 
         clienti_icon = Image.open("clienti_icon.png")
-        clienti_icon = clienti_icon.resize((64, 64), Image.LANCZOS)
+        clienti_icon = clienti_icon.resize((128, 128), Image.LANCZOS)
         clienti_icon = ctk.CTkImage(clienti_icon)
         button2 = ctk.CTkButton(self, text="Clienti", image=clienti_icon, compound=tk.TOP, command=lambda: self.check_permission(Clienti, "vendite"))
         button2.image = clienti_icon  
         button2.grid(row=2, column=1, padx=20, pady=10)
 
         indicatori_icon = Image.open("indicatori_icon.png")
-        indicatori_icon = indicatori_icon.resize((64, 64), Image.LANCZOS)
+        indicatori_icon = indicatori_icon.resize((128, 128), Image.LANCZOS)
         indicatori_icon = ctk.CTkImage(indicatori_icon)
         button3 = ctk.CTkButton(self, text="Indicatori", image=indicatori_icon, compound=tk.TOP, command=lambda: self.check_permission(Indicatori, "vendite"))
         button3.image = indicatori_icon
         button3.grid(row=2, column=2, padx=20, pady=10)
 
         home_icon = Image.open("home_icon.png")
-        home_icon = home_icon.resize((32, 32), Image.LANCZOS)
+        home_icon = home_icon.resize((64, 64), Image.LANCZOS)
         home_icon = ctk.CTkImage(home_icon)
         button4 = ctk.CTkButton(self, text="HomePage", image=home_icon, compound=tk.TOP, command=lambda: controller.show_frame(HomePage))
         button4.image = home_icon
         button4.grid(row=3, column=1, padx=20, pady=10)
 
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
-        self.columnconfigure(2, weight=1)
-        self.rowconfigure(0, weight=1)
-        self.rowconfigure(1, weight=1)
-        self.rowconfigure(2, weight=3)
+        self.appearance_mode_label = ctk.CTkLabel(self,text="Aspetto:", anchor="w")
+        self.appearance_mode_label.grid(row=4, column=0, padx=20, pady=(10, 0))
+        self.appearance_mode_optionemenu = ctk.CTkOptionMenu(self, values=["Light", "Dark", "System"],
+        command=self.change_appearance_mode_event)
+        self.appearance_mode_optionemenu.grid(row=5, column=0, padx=20, pady=(10, 10))
+        self.scaling_label = ctk.CTkLabel(self, text="Grandezza Icone:", anchor="w")
+        self.scaling_label.grid(row=6, column=0, padx=20, pady=(10, 0))
+        self.scaling_optionemenu = ctk.CTkOptionMenu(self, values=[ "100%", "120%", "140%"],
+        command=self.change_scaling_event)
+        self.scaling_optionemenu.grid(row=7, column=0, padx=20, pady=(10, 20))
 
     def check_permission(self, target_frame, required_role):
         username = self.controller.frames[LoginPage].username_entry.get()
@@ -293,7 +306,14 @@ class HomePage(ctk.CTkFrame):
             self.controller.show_frame(target_frame)
         else:
             messagebox.showerror("Errore", f"L'utente non ha il permesso di accedere a questa pagina (ruolo {required_role} richiesto)")
-            
+    
+    def change_appearance_mode_event(self, new_appearance_mode: str):
+        customtkinter.set_appearance_mode(new_appearance_mode)
+
+    def change_scaling_event(self, new_scaling: str):
+        new_scaling_float = int(new_scaling.replace("%", "")) / 100
+        customtkinter.set_widget_scaling(new_scaling_float)
+
 class Spese(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -659,11 +679,11 @@ class Indicatori(ctk.CTkFrame):
         self.update_expenses_data(start_date, end_date)
         self.update_clients_data(start_date, end_date)
         somma_col2 = self.get_sum_of_column_2()
-        self.somma_col2_label.config(text='€ {:.2f}'.format(somma_col2))
+        self.somma_col2_label.configure(text='€ {:.2f}'.format(somma_col2))
         grouped_data, self.avarage_days = self.day_indicator()
-        self.giacenza_label.config(text='{:.2f} giorni'.format(self.avarage_days))
+        self.giacenza_label.configure(text='{:.2f} giorni'.format(self.avarage_days))
         media_pezzi_venduti = self.media_pezzi_venduti()
-        self.media_pezzi_venduti_label.config(text="{:.2f}".format(media_pezzi_venduti))
+        self.media_pezzi_venduti_label.configure(text="{:.2f}".format(media_pezzi_venduti))
 
     def show_pie_chart(self):
         start_date = self.date_start.get_date()
