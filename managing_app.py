@@ -1,5 +1,6 @@
 import tkinter as tk
 import tkinter.ttk as ttk
+import customtkinter
 import customtkinter as ctk
 from PIL import Image
 from PIL import ImageTk
@@ -62,6 +63,8 @@ class MyApp(tk.Frame):
         super().__init__(master)
         self.master = master
         self.master.title('MANAGING APP')
+        customtkinter.set_appearance_mode("system")  # Modes: system (default), light, dark
+        customtkinter.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
 
         screen_width = self.master.winfo_screenwidth()
         screen_height = self.master.winfo_screenheight()
@@ -238,28 +241,28 @@ class HomePage(ctk.CTkFrame):
 
         bilancio_icon = Image.open("bilancio_icon.png")
         bilancio_icon = bilancio_icon.resize((64, 64), Image.LANCZOS)
-        bilancio_icon = ImageTk.PhotoImage(bilancio_icon)
+        bilancio_icon = ctk.CTkImage(bilancio_icon)
         button1 = ctk.CTkButton(self, text="Spese", image=bilancio_icon, compound=tk.TOP, command=lambda: self.check_permission(Spese, "contabile"))
         button1.image = bilancio_icon  
         button1.grid(row=2, column=0, padx=20, pady=10)
 
         clienti_icon = Image.open("clienti_icon.png")
         clienti_icon = clienti_icon.resize((64, 64), Image.LANCZOS)
-        clienti_icon = ImageTk.PhotoImage(clienti_icon)
+        clienti_icon = ctk.CTkImage(clienti_icon)
         button2 = ctk.CTkButton(self, text="Clienti", image=clienti_icon, compound=tk.TOP, command=lambda: self.check_permission(Clienti, "vendite"))
         button2.image = clienti_icon  
         button2.grid(row=2, column=1, padx=20, pady=10)
 
         indicatori_icon = Image.open("indicatori_icon.png")
         indicatori_icon = indicatori_icon.resize((64, 64), Image.LANCZOS)
-        indicatori_icon = ImageTk.PhotoImage(indicatori_icon)
+        indicatori_icon = ctk.CTkImage(indicatori_icon)
         button3 = ctk.CTkButton(self, text="Indicatori", image=indicatori_icon, compound=tk.TOP, command=lambda: self.check_permission(Indicatori, "vendite"))
         button3.image = indicatori_icon
         button3.grid(row=2, column=2, padx=20, pady=10)
 
         home_icon = Image.open("home_icon.png")
         home_icon = home_icon.resize((32, 32), Image.LANCZOS)
-        home_icon = ImageTk.PhotoImage(home_icon)
+        home_icon = ctk.CTkImage(home_icon)
         button4 = ctk.CTkButton(self, text="HomePage", image=home_icon, compound=tk.TOP, command=lambda: controller.show_frame(HomePage))
         button4.image = home_icon
         button4.grid(row=3, column=1, padx=20, pady=10)
@@ -290,7 +293,7 @@ class HomePage(ctk.CTkFrame):
             self.controller.show_frame(target_frame)
         else:
             messagebox.showerror("Errore", f"L'utente non ha il permesso di accedere a questa pagina (ruolo {required_role} richiesto)")
-
+            
 class Spese(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
@@ -502,15 +505,12 @@ class Clienti(tk.Frame):
         vsb.pack(side='right', fill='y')
         self.tree.configure(yscrollcommand=vsb.set)
 
-
-
     def setup_buttons(self):
         button1 = ctk.CTkButton(self, text='Aggiorna dati', command=self.update_data)
         button1.pack(padx=10, pady=10)
 
         button2 = ctk.CTkButton(self, text='Torna alla Homepage', command=lambda: self.controller.show_frame(HomePage))
         button2.pack(padx=10, pady=10)
-
 
     def update_data(self):
         self.tree.delete(*self.tree.get_children())
@@ -525,10 +525,10 @@ class Clienti(tk.Frame):
             values = (row[0], row[1], row[2], row[3]) if len(row) >= 4 else (row[0], row[1], '', '')
             self.tree.insert('', 'end', values=values, tags=row_tag)
 
-class Indicatori(tk.Frame):
+class Indicatori(ctk.CTkFrame):
     def __init__(self, parent, controller):
-        tk.Frame.__init__(self, parent)
-        self.start_date = tk.StringVar()
+        ctk.CTkFrame.__init__(self, parent)
+        self.start_date = ctk.StringVar()
         self.end_date = tk.StringVar()
         self.controller = controller
         self.expenses_data = []
@@ -536,17 +536,17 @@ class Indicatori(tk.Frame):
         self.clients_data = []
         self.update_clients_data()
         
-        main_frame = tk.Frame(self)
+        main_frame = ctk.CTkFrame(self)
         main_frame.place(relx=0.5, rely=0.5, anchor="center")
 
         label = ctk.CTkLabel(main_frame, text='Indicatori', font=('TkDefaultFont', 30))
         label.grid(row=0, column=0, pady=50, padx=20, columnspan=2)
 
-        date_frame = tk.Frame(main_frame)
+        date_frame = ctk.CTkFrame(main_frame)
         date_frame.grid(row=1, column=0, pady=10, padx=20, columnspan=2)
         
 
-        date_start_label = tk.Label(date_frame, text="Data inizio periodo:", font=("TkDefaultFont", 14))
+        date_start_label = ctk.CTkLabel(date_frame, text="Data inizio periodo:", font=("TkDefaultFont", 14))
         date_start_label.grid(row=0, column=0, padx=10)
         self.date_start = DateEntry(date_frame, width=12, background='blue', foreground='white', font=('TkDefaultFont', 14))
         self.date_start.grid(row=0, column=1, padx=10)
@@ -556,7 +556,7 @@ class Indicatori(tk.Frame):
         date_start_label.bind("<Enter>", lambda event: messagebox.showinfo("Messaggio di aiuto",
                                                                             "Inserisci la data di inizio e fine periodo. Il presente comando modifica gli indicatori 2, 3 e 5. Premere poi 'Aggiorna Indicatori' per aggiornare "))
 
-        date_end_label = tk.Label(date_frame, text="Data fine periodo:", font=("TkDefaultFont", 14))
+        date_end_label = ctk.CTkLabel(date_frame, text="Data fine periodo:", font=("TkDefaultFont", 14))
         date_end_label.grid(row=0, column=2, padx=10)
         self.date_end = DateEntry(date_frame, width=12, background='blue', foreground='white', font=('TkDefaultFont', 14))
         self.date_end.grid(row=0, column=3, padx=10)
@@ -564,42 +564,42 @@ class Indicatori(tk.Frame):
         description_label = ctk.CTkLabel(main_frame, text='Questa pagina mostra alcuni indicatori.', font=('TkDefaultFont', 20))
         description_label.grid(row=2, column=0, pady=10, padx=20, columnspan=2)
 
-        sum_frame = tk.Frame(main_frame)
+        sum_frame = ctk.CTkFrame(main_frame)
         sum_frame.grid(row=3, column=0, pady=10, padx=20, columnspan=2)
         somma_col2 = self.get_sum_of_column_2()
-        tk.Label(sum_frame, text='1) Somma delle spese registrate (2023):', font=('TkDefaultFont', 24)).grid(row=0, column=0, padx=10)
-        self.somma_col2_label = tk.Label(sum_frame, text='€ {:.2f}'.format(somma_col2), font=('TkDefaultFont', 24))
+        ctk.CTkLabel(sum_frame, text='1) Somma delle spese registrate (2023):', font=('TkDefaultFont', 24)).grid(row=0, column=0, padx=10)
+        self.somma_col2_label = ctk.CTkLabel(sum_frame, text='€ {:.2f}'.format(somma_col2), font=('TkDefaultFont', 24))
         self.somma_col2_label.grid(row=0, column=1, padx=10)
 
-        pie_chart_caption = tk.Label(main_frame, text='2) Grafico clienti e pezzi', font=('TkDefaultFont', 24))
+        pie_chart_caption = ctk.CTkLabel(main_frame, text='2) Grafico clienti e pezzi', font=('TkDefaultFont', 24))
         pie_chart_caption.grid(row=4, column=0, pady=10, padx=20)
 
         pie_chart_button = ctk.CTkButton(main_frame, text='Mostra grafico', command=self.show_pie_chart)
         pie_chart_button.grid(row=4, column=1, pady=20, padx=20)
 
-        giacenza_frame = tk.Frame(main_frame)
+        giacenza_frame = ctk.CTkFrame(main_frame)
         giacenza_frame.grid(row=5, column=0, pady=10, padx=20, columnspan=2)
         self.avarage_days = 0
         self.update_clients_data()
         grouped_data, self.avarage_days = self.day_indicator()
-        tk.Label(giacenza_frame, text='3) Tempo medio di invio ordine:', font=('TkDefaultFont', 24)).grid(row=0, column=0, padx=10)
-        self.giacenza_label = tk.Label(giacenza_frame, text='{:.2f} giorni'.format(self.avarage_days), font=('TkDefaultFont', 24))
+        ctk.CTkLabel(giacenza_frame, text='3) Tempo medio di invio ordine:', font=('TkDefaultFont', 24)).grid(row=0, column=0, padx=10)
+        self.giacenza_label = ctk.CTkLabel(giacenza_frame, text='{:.2f} giorni'.format(self.avarage_days), font=('TkDefaultFont', 24))
         self.giacenza_label.grid(row=0, column=1, padx=10)
 
-        bar_chart_caption = tk.Label(main_frame, text="4) Tempo medio invio ordine per mese", font=("TkDefaultFont", 24))
+        bar_chart_caption = ctk.CTkLabel(main_frame, text="4) Tempo medio invio ordine per mese", font=("TkDefaultFont", 24))
         bar_chart_caption.grid(row=6, column=0, pady=10, padx=20)
 
         bar_chart_button = ctk.CTkButton(main_frame, text="Mostra grafico", command=self.show_bar_chart)
         bar_chart_button.grid(row=6, column=1, pady=20, padx=20)
 
-        media_pezzi_venduti_frame = tk.Frame(main_frame)
+        media_pezzi_venduti_frame = ctk.CTkFrame(main_frame)
         media_pezzi_venduti_frame.grid(row=7, column=0, pady=10, padx=20, columnspan=2)
         media_pezzi_venduti = self.media_pezzi_venduti()
-        tk.Label(media_pezzi_venduti_frame, text="5) Media pezzi venduti per ordine:", font=("TkDefaultFont", 24)).grid(row=0, column=0, padx=10)
-        self.media_pezzi_venduti_label = tk.Label(media_pezzi_venduti_frame, text="{:.2f}".format(media_pezzi_venduti), font=("TkDefaultFont", 24))
+        ctk.CTkLabel(media_pezzi_venduti_frame, text="5) Media pezzi venduti per ordine:", font=("TkDefaultFont", 24)).grid(row=0, column=0, padx=10)
+        self.media_pezzi_venduti_label = ctk.CTkLabel(media_pezzi_venduti_frame, text="{:.2f}".format(media_pezzi_venduti), font=("TkDefaultFont", 24))
         self.media_pezzi_venduti_label.grid(row=0, column=1, padx=10)
 
-        moving_average_caption = tk.Label(main_frame, text="6) Grafico pezzi venduti ogni mese", font=("TkDefaultFont", 24))
+        moving_average_caption = ctk.CTkLabel(main_frame, text="6) Grafico pezzi venduti ogni mese", font=("TkDefaultFont", 24))
         moving_average_caption.grid(row=8, column=0, pady=10, padx=20)
 
         moving_average_button = ctk.CTkButton(main_frame, text="Mostra grafico", command=self.show_totali_pezzi_venduti_chart)
