@@ -37,11 +37,13 @@ class GoogleSheetAuth:
 
     @classmethod
     def get_instance(cls):
+        # Restituisce un'istanza della classe GoogleSheetAuth. Se l'istanza non è ancora stata creata, viene creata e memorizzata.
         if cls._instance is None:
             cls._instance = cls()
         return cls._instance
 
     def __init__(self):
+        # Inizializza una nuova istanza di GoogleSheetAuth. Carica le credenziali se esistono o genera nuove credenziali e le salva.
         self.creds = None
         if os.path.exists('token.pickle'):
             with open('token.pickle', 'rb') as token:
@@ -56,50 +58,52 @@ class GoogleSheetAuth:
                 pickle.dump(self.creds, token)
 
     def get_credentials(self):
+        # Restituisce le credenziali autorizzate per l'accesso alle API Google Sheets.
         return gspread.authorize(self.creds)
-    
+
 class MyApp(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
         self.master = master
-        self.master.title('MANAGING APP')
-        customtkinter.set_appearance_mode("system")  # Modes: system (default), light, dark
-        customtkinter.set_default_color_theme("blue")  # Themes: blue (default), dark-blue, green
+        self.master.title('MANAGING APP')  # Imposta il titolo della finestra come 'MANAGING APP'
+        customtkinter.set_appearance_mode("system")  # Imposta la modalità di aspetto di customtkinter come "system"
+        customtkinter.set_default_color_theme("blue")  # Imposta il tema di colore predefinito di customtkinter come "blue"
 
-        screen_width = self.master.winfo_screenwidth()
-        screen_height = self.master.winfo_screenheight()
-        screen_width = int(screen_width * 2 / 3)
-        self.master.geometry(f"{screen_width}x{screen_height}")
-        self.master.resizable(True, True)
-        self.initUI()
+        screen_width = self.master.winfo_screenwidth()  # Ottiene la larghezza dello schermo
+        screen_height = self.master.winfo_screenheight()  # Ottiene l'altezza dello schermo
+        screen_width = int(screen_width * 2 / 3)  # Calcola la larghezza della finestra come due terzi della larghezza dello schermo
+        self.master.geometry(f"{screen_width}x{screen_height}")  # Imposta la geometria della finestra con la larghezza e l'altezza calcolate
+        self.master.resizable(True, True)  # Imposta la finestra come ridimensionabile sia in larghezza che in altezza
+        self.initUI()  # Inizializza l'interfaccia utente
         self.pack()
 
     def initUI(self):
-        container = tk.Frame(self.master)
-        container.pack(fill='both', expand=True)
+        container = tk.Frame(self.master)  # Crea un frame contenitore per gli altri frame
+        container.pack(fill='both', expand=True)  # Pack il frame contenitore per riempire tutto lo spazio disponibile
 
         self.frames = {}
 
         # Configura lo stile per i widget di customtkinter
-        ctk.CTkLabel.default_font = ('TkDefaultFont', 20)
-        ctk.CTkEntry.default_font = ('TkDefaultFont', 20)
-        ctk.CTkButton.default_font = ('TkDefaultFont', 20)
+        ctk.CTkLabel.default_font = ('TkDefaultFont', 20)  # Imposta il font predefinito per i label di customtkinter
+        ctk.CTkEntry.default_font = ('TkDefaultFont', 20)  # Imposta il font predefinito per gli entry di customtkinter
+        ctk.CTkButton.default_font = ('TkDefaultFont', 20)  # Imposta il font predefinito per i button di customtkinter
 
         for F in (LoginPage, HomePage, Spese, Clienti, Indicatori):
-            frame = F(container, self)
+            frame = F(container, self)  # Crea un'istanza di ciascun frame e passa il frame contenitore e l'istanza corrente di MyApp come argomenti
             self.frames[F] = frame
 
         for frame in self.frames.values():
-            frame.pack_forget()
-        self.frames[LoginPage].pack(fill='both', expand=True)
-        container.pack(fill='both', expand=True)
+            frame.pack_forget()  # Nasconde tutti i frame
+
+        self.frames[LoginPage].pack(fill='both', expand=True)  # Mostra il frame di LoginPage impostandolo per riempire tutto lo spazio disponibile
+        container.pack(fill='both', expand=True)  # Pack nuovamente il frame contenitore per assicurarsi che sia visibile
 
     def show_frame(self, frame_class):
         frame = self.frames[frame_class]
         for f in self.frames.values():
-            f.pack_forget()
-        frame.pack(fill='both', expand=True)
+            f.pack_forget()  # Nasconde tutti i frame
 
+        frame.pack(fill='both', expand=True)  # Mostra il frame specificato impostandolo per riempire tutto lo spazio disponibile
 
 class LoginPage(tk.Frame):
     def __init__(self, parent, controller):
