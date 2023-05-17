@@ -1,35 +1,33 @@
+# Standard library imports
+import os
+import pickle
+import statistics
+import math
+from datetime import datetime, date
+
+# Third party imports
+import gspread
+import numpy as np
+import matplotlib.pyplot as plt
+from PIL import Image
+from scipy.stats import norm
+from google.auth.transport.requests import Request
+from googleapiclient.discovery import build
+from googleapiclient.errors import HttpError
+from google_auth_oauthlib.flow import InstalledAppFlow, Flow
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from tkcalendar import DateEntry
 import tkinter as tk
+import tkinter.colorchooser as colorchooser
 import tkinter.ttk as ttk
+from tkinter import messagebox
+
+# Custom imports
 import customtkinter
 import customtkinter as ctk
 from customtkinter import CTkFont
-import tkinter.colorchooser as colorchooser
-from PIL import Image
-from PIL import ImageTk
 from customtkinter.windows.widgets.image.ctk_image import CTkImage
-import os
-import pickle
-import gspread
-from tkinter import messagebox
-from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow, Flow
-from google.auth.transport.requests import Request
-from tkcalendar import DateEntry
-from datetime import datetime, date
-from tkcalendar import DateEntry
-from googleapiclient.errors import HttpError
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import statistics
-from scipy.stats import norm
-import math
-import numpy as np
 
-# Costanti e configurazione
-SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
-SAMPLE_SPREADSHEET_ID_input = '1ssWRMfTWKkjD-JdC2Vp2r6b9NlMsh7omqNq_bRW-kdw'
-SAMPLE_RANGE_NAME = 'A1:AA1000'
-creds = None
 
 class GoogleSheetAuth:
     SCOPES = ['https://www.googleapis.com/auth/spreadsheets', 'https://www.googleapis.com/auth/drive']
@@ -283,7 +281,7 @@ class HomePage(ctk.CTkFrame):
         self.appearance_mode_optionemenu.grid(row=5, column=0, padx=20, pady=(10, 10))
         self.scaling_label = ctk.CTkLabel(self, text="Grandezza Icone:", anchor="w")
         self.scaling_label.grid(row=6, column=0, padx=20, pady=(10, 0))
-        self.scaling_optionemenu = ctk.CTkOptionMenu(self, values=[ "100%", "120%", "140%"],
+        self.scaling_optionemenu = ctk.CTkOptionMenu(self, values=[ "100%", "120%", "130%"],
         command=self.change_scaling_event)
         self.scaling_optionemenu.grid(row=7, column=0, padx=20, pady=(10, 20))
 
@@ -443,6 +441,14 @@ class Spese(tk.Frame):
         ctk.CTkButton(self, text='Aggiorna dati', font=font, command=self.update_data, width=15).pack(fill=ctk.X, padx=10, pady=10)
 
     def update_data(self):
+        try:
+            gc = GoogleSheetAuth.get_instance().get_credentials()
+            sheet = gc.open_by_key(GoogleSheetAuth.SAMPLE_SPREADSHEET_ID_input).sheet1
+            data = sheet.get_all_values()
+        except Exception as e:
+            tk.messagebox.showerror('Errore', f'Errore durante il caricamento dei dati: {str(e)}')
+            return
+        
         gc = GoogleSheetAuth.get_instance().get_credentials()
         sheet = gc.open_by_key(GoogleSheetAuth.SAMPLE_SPREADSHEET_ID_input).sheet1
         data = sheet.get_all_values()
@@ -470,11 +476,11 @@ class Spese(tk.Frame):
             result = sheet.append_rows(data_to_write, value_input_option='RAW')
 
             if len(data_to_write) > 0:
-                self.input1.delete(0, tk.END)
+                self.input1.set(self.causale_options[0])  # Reset the value of the CTkComboBox
                 self.input2.delete(0, tk.END)
                 self.input3.delete(0, tk.END)
                 self.input1.focus_set()
-                self.input1.icursor(tk.END)
+                #self.input1.icursor(tk.END) #no incursor
                 self.update_data()
                 tk.messagebox.showinfo('Successo', 'Dati salvati correttamente.')
             else:
@@ -535,8 +541,9 @@ class Clienti(tk.Frame):
     def update_data(self):
         self.tree.delete(*self.tree.get_children())
 
-        gc = GoogleSheetAuth.get_instance().get_credentials()
-        sheet = gc.open_by_key(SAMPLE_SPREADSHEET_ID_input)
+        gs_auth = GoogleSheetAuth.get_instance()
+        gc = gs_auth.get_credentials()
+        sheet = gc.open_by_key(GoogleSheetAuth.SAMPLE_SPREADSHEET_ID_input)
         sheet2 = sheet.get_worksheet(1)
         data = sheet2.get_all_values()
 
@@ -646,8 +653,9 @@ class Indicatori(ctk.CTkFrame):
             start_date = None
             end_date = None
 
-        gc = GoogleSheetAuth.get_instance().get_credentials()
-        sheet = gc.open_by_key(SAMPLE_SPREADSHEET_ID_input)
+        gs_auth = GoogleSheetAuth.get_instance()
+        gc = gs_auth.get_credentials()
+        sheet = gc.open_by_key(GoogleSheetAuth.SAMPLE_SPREADSHEET_ID_input)
         sheet1 = sheet.get_worksheet(0)
         expenses_data_all = sheet1.get_all_values()
 
@@ -661,8 +669,9 @@ class Indicatori(ctk.CTkFrame):
         return sum(float(val) for val in col_values if val)
     
     def update_clients_data(self, start_date=None, end_date=None):
-        gc = GoogleSheetAuth.get_instance().get_credentials()
-        sheet = gc.open_by_key(SAMPLE_SPREADSHEET_ID_input)
+        gs_auth = GoogleSheetAuth.get_instance()
+        gc = gs_auth.get_credentials()
+        sheet = gc.open_by_key(GoogleSheetAuth.SAMPLE_SPREADSHEET_ID_input)
         sheet2 = sheet.get_worksheet(1) 
         if start_date is None:
             start_date = date.min
@@ -702,8 +711,9 @@ class Indicatori(ctk.CTkFrame):
             plt.show()
   
     def get_data(self):
-        gc = gspread.authorize(creds)
-        sheet = gc.open_by_key(SAMPLE_SPREADSHEET_ID_input)
+        gs_auth = GoogleSheetAuth.get_instance()
+        gc = gs_auth.get_credentials()
+        sheet = gc.open_by_key(GoogleSheetAuth.SAMPLE_SPREADSHEET_ID_input)
         sheet2 = sheet.get_worksheet(1)  
         return sheet2.get_all_values()
     
