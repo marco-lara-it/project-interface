@@ -315,6 +315,7 @@ class Spese(tk.Frame):
         self.controller = controller
         
         self.setup_frames()
+        self.setup_search()
         self.setup_header() 
         self.setup_causale()
         self.setup_importo()
@@ -336,12 +337,22 @@ class Spese(tk.Frame):
         self.data_frame.pack(side="top", anchor="w", padx=10, pady=10)
         self.indicator_frame = ctk.CTkFrame(self)
         self.indicator_frame.pack(side="top", anchor="e", padx=10, pady=10)
+        self.search_frame = ctk.CTkFrame(self)
+        self.search_frame.pack(padx=10, pady=10, fill=tk.X)
         self.text_frame = ctk.CTkFrame(self)
         self.text_frame.pack(fill=ctk.BOTH, padx=10, pady=10, expand=True)
+    
+    def setup_search(self):
+        self.search_var = tk.StringVar()  # Variabile per contenere la query di ricerca
+        self.search_var.trace('w', self.perform_search)  # Richiama perform_search ogni volta che la query di ricerca cambia
+        search_entry = ctk.CTkEntry(self.search_frame, textvariable=self.search_var)
+        search_entry.pack(side=tk.RIGHT, fill=tk.X, expand=True)
 
     def setup_header(self):
         label = ctk.CTkLabel(self.header_frame, text='Spese', font=('DefaultFont', 20))
         label.pack(side=tk.LEFT, padx=10, pady=10)
+        search_label = ctk.CTkLabel(self.search_frame, text='Cerca:')
+        search_label.pack(side=tk.LEFT)
         button = ctk.CTkButton(self.header_frame, text='Torna alla Homepage', command=lambda: self.controller.show_frame(HomePage))
         button.pack(side=tk.RIGHT, padx=10, pady=10)
     
@@ -407,7 +418,7 @@ class Spese(tk.Frame):
         
         self.input3.pack(side="left", padx=10)
         self.input3.bind('<Return>', lambda event: self.salva_dati())
-
+        
     def setup_salva_button(self):
         font = ('TkDefaultFont', 16)
         ctk.CTkButton(self, text='Salva', font=font, command=self.salva_dati, width=15).pack(fill=ctk.X, padx=10, pady=10)
@@ -443,6 +454,25 @@ class Spese(tk.Frame):
         vsb = ttk.Scrollbar(self.text_frame, orient="vertical", command=self.tree.yview, style="Custom.Vertical.TScrollbar")
         vsb.pack(side='right', fill='y')
         self.tree.configure(yscrollcommand=vsb.set)
+    
+    def perform_search(self, *args):
+        query = self.search_var.get().lower()  #query di ricerca
+
+        if query == '': # Se la query di ricerca è vuota, termina l'esecuzione della funzione
+            return
+
+        matching_items = []  # Crea una lista vuota per contenere gli elementi corrispondenti
+
+        for item in self.tree.get_children():
+            if query in self.tree.item(item)['values'][0].lower():  # Confronta la query di ricerca con il nome del cliente
+                self.tree.see(item)  # Rende visibile l'elemento
+                matching_items.append(item)  # Aggiunge l'elemento alla lista degli elementi corrispondenti
+
+        self.tree.selection_set(matching_items)  # Seleziona tutti gli elementi corrispondenti
+
+        for item in self.tree.get_children():
+            if item not in matching_items:
+                self.tree.selection_remove(item)  # Deseleziona gli elementi non corrispondenti
 
     def setup_aggiorna_button(self):
         font = ('TkDefaultFont', 16)
@@ -456,10 +486,7 @@ class Spese(tk.Frame):
         except Exception as e:
             tk.messagebox.showerror('Errore', f'Errore durante il caricamento dei dati: {str(e)}')
             return
-        
-        gc = GoogleSheetAuth.get_instance().get_credentials()
-        sheet = gc.open_by_key(GoogleSheetAuth.SAMPLE_SPREADSHEET_ID_input).sheet1
-        data = sheet.get_all_values()
+
         for i in self.tree.get_children():
             self.tree.delete(i)
         for index, row in enumerate(data):
@@ -476,7 +503,6 @@ class Spese(tk.Frame):
 
         if causale and importo and data_string:
             data_to_write = [[causale, importo, data_string]]
-            body = {'values': data_to_write}
 
             gc = GoogleSheetAuth.get_instance().get_credentials()
             sheet = gc.open_by_key(GoogleSheetAuth.SAMPLE_SPREADSHEET_ID_input).sheet1
@@ -486,9 +512,7 @@ class Spese(tk.Frame):
             if len(data_to_write) > 0:
                 self.input1.set(self.causale_options[0])  # Reset the value of the CTkComboBox
                 self.input2.delete(0, tk.END)
-                self.input3.delete(0, tk.END)
                 self.input1.focus_set()
-                #self.input1.icursor(tk.END) #no incursor
                 self.update_data()
                 tk.messagebox.showinfo('Successo', 'Dati salvati correttamente.')
             else:
@@ -501,6 +525,7 @@ class Clienti(tk.Frame):
         super().__init__(parent)
         self.controller = controller
         self.setup_header()
+        self.setup_search()
         self.setup_treeview()
         self.setup_buttons()
         self.update_data()
@@ -508,6 +533,19 @@ class Clienti(tk.Frame):
     def setup_header(self):
         label = ctk.CTkLabel(self, text='Clienti', font=('TkDefaultFont', 20))
         label.pack(padx=10, pady=10)
+
+    def setup_search(self):
+        search_frame = ctk.CTkFrame(self)
+        search_frame.pack(padx=10, pady=10, fill=tk.X)
+
+        search_label = ctk.CTkLabel(search_frame, text='Cerca:')
+        search_label.pack(side=tk.LEFT)
+
+        self.search_var = tk.StringVar()  # Variabile per contenere la query di ricerca
+        self.search_var.trace('w', self.perform_search)  # Richiama perform_search ogni volta che la query di ricerca cambia
+
+        search_entry = ctk.CTkEntry(search_frame, textvariable=self.search_var)
+        search_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
 
     def setup_treeview(self):
         columns = ('Cliente', 'Pezzi venduti', 'Data ordine', 'Data spedizione')
@@ -559,6 +597,25 @@ class Clienti(tk.Frame):
             row_tag = "pari" if index % 2 == 0 else "dispari"
             values = (row[0], row[1], row[2], row[3]) if len(row) >= 4 else (row[0], row[1], '', '')
             self.tree.insert('', 'end', values=values, tags=row_tag)
+    
+    def perform_search(self, *args):
+        query = self.search_var.get().lower()  #query di ricerca
+
+        if query == '': # Se la query di ricerca è vuota, termina l'esecuzione della funzione
+            return
+
+        matching_items = []  # Crea una lista vuota per contenere gli elementi corrispondenti
+
+        for item in self.tree.get_children():
+            if query in self.tree.item(item)['values'][0].lower():  # Confronta la query di ricerca con il nome del cliente
+                self.tree.see(item)  # Rende visibile l'elemento
+                matching_items.append(item)  # Aggiunge l'elemento alla lista degli elementi corrispondenti
+
+        self.tree.selection_set(matching_items)  # Seleziona tutti gli elementi corrispondenti
+
+        for item in self.tree.get_children():
+            if item not in matching_items:
+                self.tree.selection_remove(item)  # Deseleziona gli elementi non corrispondenti
 
 class Indicatori(ctk.CTkFrame):
     def __init__(self, parent, controller):
