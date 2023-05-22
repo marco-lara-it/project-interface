@@ -21,6 +21,7 @@ import tkinter as tk
 import tkinter.colorchooser as colorchooser
 import tkinter.ttk as ttk
 from tkinter import messagebox
+import tkcalendar as calendar
 
 # Custom imports
 import customtkinter
@@ -67,7 +68,7 @@ class MyApp(tk.Frame):
         self.master = master
         self.master.title('MANAGING APP')  # Imposta il titolo della finestra come 'MANAGING APP'
         customtkinter.set_appearance_mode("system")  # Imposta la modalità di aspetto di customtkinter come "system"
-        customtkinter.set_default_color_theme("blue")  # Imposta il tema di colore predefinito di customtkinter come "blue"
+        customtkinter.set_default_color_theme("green")  # Imposta il tema di colore predefinito di customtkinter come "green"
 
         screen_width = self.master.winfo_screenwidth()  # Ottiene la larghezza dello schermo
         screen_height = self.master.winfo_screenheight()  # Ottiene l'altezza dello schermo
@@ -278,11 +279,6 @@ class HomePage(ctk.CTkFrame):
         button4.image = home_icon
         button4.grid(row=3, column=1, padx=20, pady=10)
 
-        self.appearance_mode_label = ctk.CTkLabel(self,text="Aspetto:", anchor="w")
-        self.appearance_mode_label.grid(row=4, column=0, padx=20, pady=(10, 0))
-        self.appearance_mode_optionemenu = ctk.CTkOptionMenu(self, values=["Light", "Dark", "System"],
-        command=self.change_appearance_mode_event)
-        self.appearance_mode_optionemenu.grid(row=5, column=0, padx=20, pady=(10, 10))
         self.scaling_label = ctk.CTkLabel(self, text="Grandezza Icone:", anchor="w")
         self.scaling_label.grid(row=6, column=0, padx=20, pady=(10, 0))
         self.scaling_optionemenu = ctk.CTkOptionMenu(self, values=[ "100%", "120%", "130%"],
@@ -308,9 +304,6 @@ class HomePage(ctk.CTkFrame):
             self.controller.show_frame(target_frame)
         else:
             messagebox.showerror("Errore", f"L'utente non ha il permesso di accedere a questa pagina (ruolo {required_role} richiesto)")
-    
-    def change_appearance_mode_event(self, new_appearance_mode: str):
-        customtkinter.set_appearance_mode(new_appearance_mode)
 
     def change_scaling_event(self, new_scaling: str):
         new_scaling_float = int(new_scaling.replace("%", "")) / 100
@@ -320,7 +313,7 @@ class Spese(tk.Frame):
     def __init__(self, parent, controller):
         super().__init__(parent)
         self.controller = controller
-
+        
         self.setup_frames()
         self.setup_header() 
         self.setup_causale()
@@ -399,8 +392,19 @@ class Spese(tk.Frame):
     def setup_data(self):
         font = ('TkDefaultFont', 16)
         input_width = 25
+
         ctk.CTkLabel(self.data_frame, text='Data:', font=font).pack(side="left", padx=10)
-        self.input3 = DateEntry(self.data_frame, date_pattern='dd.mm.yyyy', background='darkblue', foreground='white', borderwidth=2, width=input_width)
+
+        self.input3 = DateEntry(
+            self.data_frame, 
+            date_pattern='dd.mm.yyyy', 
+            background='darkblue',  # cambiato il colore di sfondo
+            foreground='white',  # cambiato il colore del testo
+            borderwidth=2, 
+            width=input_width,
+            font=font  # aggiunto il font
+        )
+        
         self.input3.pack(side="left", padx=10)
         self.input3.bind('<Return>', lambda event: self.salva_dati())
 
@@ -412,8 +416,8 @@ class Spese(tk.Frame):
         columns = ('Causale', 'Importo', 'Data')
 
         style = ttk.Style()
-        style.configure("Custom.Treeview", background="white", foreground="black")
-        style.configure("Custom.Treeview.Heading", background="white", foreground="black")
+        style.configure("Custom.Treeview", background="lightgray", foreground="black")#scritte
+        style.configure("Custom.Treeview.Heading", background="white", foreground="green")
         style.configure("Custom.Vertical.TScrollbar", background="white", troughcolor="white")
 
         self.tree = ttk.Treeview(self.text_frame, columns=columns, show='headings', height=10, style="Custom.Treeview")
@@ -525,7 +529,7 @@ class Clienti(tk.Frame):
 
         style = ttk.Style()
         style.configure("Custom.Treeview", background="lightgray", foreground="black")#scritte
-        style.configure("Custom.Treeview.Heading", background="white", foreground="white")
+        style.configure("Custom.Treeview.Heading", background="white", foreground="green")
         style.configure("Custom.Vertical.TScrollbar", background="white", troughcolor="white")
 
         self.tree.tag_configure("pari", background="lightgray")
@@ -585,7 +589,7 @@ class Indicatori(ctk.CTkFrame):
         # Set the default date for date_start
         self.date_start.set_date("01/01/2022")
         date_start_label.bind("<Enter>", lambda event: messagebox.showinfo("Messaggio di aiuto",
-                                                                            "Inserisci la data di inizio e fine periodo. Il presente comando modifica gli indicatori 2, 3 e 5. Premere poi 'Aggiorna Indicatori' per aggiornare "))
+                                                                            "Inserisci la data di inizio e fine periodo. Questo comando modifica gli indicatori 2, 3 e 5. Premere poi 'Aggiorna Indicatori' per aggiornare "))
 
         date_end_label = ctk.CTkLabel(date_frame, text="Data fine periodo:", font=("TkDefaultFont", 14))
         date_end_label.grid(row=0, column=2, padx=10)
@@ -597,7 +601,7 @@ class Indicatori(ctk.CTkFrame):
 
         sum_frame = ctk.CTkFrame(main_frame)
         sum_frame.grid(row=3, column=0, pady=10, padx=20, columnspan=2)
-        somma_col2 = self.get_sum_of_column_2()
+        somma_col2 = self.sum_expenses()
         ctk.CTkLabel(sum_frame, text='1) Somma delle spese registrate (2023):', font=('TkDefaultFont', 24)).grid(row=0, column=0, padx=10)
         self.somma_col2_label = ctk.CTkLabel(sum_frame, text='€ {:.2f}'.format(somma_col2), font=('TkDefaultFont', 24))
         self.somma_col2_label.grid(row=0, column=1, padx=10)
@@ -668,7 +672,7 @@ class Indicatori(ctk.CTkFrame):
         else:
             self.expenses_data = expenses_data_all
 
-    def get_sum_of_column_2(self):
+    def sum_expenses(self):
         col_values = [row[1] for row in self.expenses_data]
         return sum(float(val) for val in col_values if val)
     
@@ -691,7 +695,7 @@ class Indicatori(ctk.CTkFrame):
 
         self.update_expenses_data(start_date, end_date)
         self.update_clients_data(start_date, end_date)
-        somma_col2 = self.get_sum_of_column_2()
+        somma_col2 = self.sum_expenses()
         self.somma_col2_label.configure(text='€ {:.2f}'.format(somma_col2))
         grouped_data, self.avarage_days = self.day_indicator()
         self.giacenza_label.configure(text='{:.2f} giorni'.format(self.avarage_days))
