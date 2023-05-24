@@ -3,6 +3,7 @@ import os
 import pickle
 import statistics
 import math
+import bcrypt
 from datetime import datetime, date
 
 # Third party imports
@@ -145,7 +146,7 @@ class LoginPage(tk.Frame):
 
     def login(self):
         username = self.username_entry.get()
-        password = self.password_entry.get()
+        password = self.password_entry.get().encode('utf-8')
 
         try:
             gc = GoogleSheetAuth.get_instance().get_credentials()
@@ -154,10 +155,12 @@ class LoginPage(tk.Frame):
             values = worksheet.get_all_values()
 
             for row in values:
-                if len(row) >= 2 and row[0] == username and row[1] == password:
-                    self.controller.show_frame(HomePage)
-                    return
-                
+                if len(row) >= 2 and row[0] == username:
+                    hashed_password = row[1].encode('utf-8')
+                    if bcrypt.checkpw(password, hashed_password):
+                        self.controller.show_frame(HomePage)
+                        return
+
             tk.messagebox.showerror("Errore", "Username o password non corretti")
 
         except HttpError as error:
@@ -209,6 +212,8 @@ class LoginPage(tk.Frame):
             tk.messagebox.showerror("Errore", "Le due password non corrispondono")
             return
 
+        hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
         try:
             gc = GoogleSheetAuth.get_instance().get_credentials()
             sheet = gc.open_by_key(GoogleSheetAuth.SAMPLE_SPREADSHEET_ID_input)
@@ -221,7 +226,7 @@ class LoginPage(tk.Frame):
                     return
 
             new_range = f"A{len(values) + 1}:C{len(values) + 1}"
-            result = worksheet.update(new_range, [[new_username, new_password, new_role]], value_input_option="USER_ENTERED")
+            result = worksheet.update(new_range, [[new_username, hashed_password, new_role]], value_input_option="USER_ENTERED")
 
             new_credentials_window.destroy()
 
