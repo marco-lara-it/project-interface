@@ -11,12 +11,10 @@ import gspread
 import numpy as np
 import matplotlib.pyplot as plt
 from PIL import Image
-from scipy.stats import norm
 from google.auth.transport.requests import Request
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 from google_auth_oauthlib.flow import InstalledAppFlow, Flow
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from tkcalendar import DateEntry
 import tkinter as tk
 import tkinter.colorchooser as colorchooser
@@ -118,7 +116,7 @@ class LoginPage(tk.Frame):
 
         self.custom_font = CTkFont(size=20)  # Aumenta la dimensione del font
 
-        self.instructions_label = ctk.CTkLabel(self.login_frame, text="Inserisci l'username e la password per accedere all'app:", font=self.custom_font)
+        self.instructions_label = ctk.CTkLabel(self.login_frame, text=" Inserisci l'username e la password per accedere all'app ", font=self.custom_font)
         self.instructions_label.pack(pady=30)  # Aumenta la spaziatura
 
         self.username_label = ctk.CTkLabel(self.login_frame, text="Username", font=self.custom_font)
@@ -287,7 +285,7 @@ class HomePage(ctk.CTkFrame):
         self.scaling_label = ctk.CTkLabel(self, text="Grandezza Icone:", anchor="w")
         self.scaling_label.grid(row=6, column=0, padx=20, pady=(10, 0))
         self.scaling_optionemenu = ctk.CTkOptionMenu(self, values=[ "100%", "120%", "130%"],
-        command=self.change_scaling_event)
+        command=self.grandezza_icone)
         self.scaling_optionemenu.grid(row=7, column=0, padx=20, pady=(10, 20))
 
     def check_permission(self, target_frame, required_role):
@@ -310,7 +308,7 @@ class HomePage(ctk.CTkFrame):
         else:
             messagebox.showerror("Errore", f"L'utente non ha il permesso di accedere a questa pagina (ruolo {required_role} richiesto)")
 
-    def change_scaling_event(self, new_scaling: str):
+    def grandezza_icone(self, new_scaling: str):
         new_scaling_float = int(new_scaling.replace("%", "")) / 100
         customtkinter.set_widget_scaling(new_scaling_float)
 
